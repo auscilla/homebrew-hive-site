@@ -168,6 +168,27 @@
       max-width: 600px;
     }
 
+    /* Wishlist Button */
+    .wishlist-btn {
+      align-self: flex-start;
+      padding: 12px 24px;
+      background-color: #111;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      margin-bottom: 24px;
+      transition: background-color 0.2s ease;
+    }
+
+    .wishlist-btn:hover {
+      background-color: #333;
+    }
+
     /* Screenshot Gallery Row */
     .screenshots-row {
       display: grid;
@@ -191,6 +212,102 @@
       padding: 100px 20px;
       font-size: 1.2rem;
       color: #555;
+    }
+
+    /* Wishlist Modal Window */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 200;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 8px;
+      border: 2px solid #111;
+      width: 90%;
+      max-width: 380px;
+      text-align: center;
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .modal-title {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .modal-subtitle {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .modal-form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .modal-form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .modal-form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #111;
+      border-radius: 4px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .modal-submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .modal-error {
+      color: #d9534f;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .modal-success {
+      color: #2e7d32;
+      font-size: 13px;
+      margin-top: 10px;
     }
 
     /* Footer Back Link */
@@ -237,6 +354,10 @@
         margin-right: auto;
       }
 
+      .wishlist-btn {
+        align-self: center;
+      }
+
       .screenshots-row {
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
@@ -259,7 +380,7 @@
       <a href="index.html">HOME</a>
       <a href="how-it-works.html">HOW IT WORKS</a>
       <a href="games.html">GAMES</a>
-      <a href="#login">LOGIN</a>
+      <a href="login.html">LOGIN</a>
       <a href="#find-us">FIND US</a>
       <a href="#request-us">REQUEST US</a>
       <a href="#contact-us">CONTACT US</a>
@@ -286,6 +407,8 @@
       
       <p class="game-description" id="gameDesc"></p>
 
+      <button class="wishlist-btn" id="openWishlistModal">+ Add to Wishlist</button>
+
       <div class="screenshots-row">
         <img src="shot1.png" alt="Screenshot 1" class="screenshot-img" />
         <img src="shot2.png" alt="Screenshot 2" class="screenshot-img" />
@@ -294,6 +417,30 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Wishlist Modal -->
+  <div class="modal-overlay" id="wishlistModal">
+    <div class="modal-box">
+      <button class="modal-close" id="closeWishlistModal">&times;</button>
+      <h3 class="modal-title">Save to Wishlist</h3>
+      <p class="modal-subtitle">Enter your email and 4-digit PIN to save this game to your profile.</p>
+
+      <form id="wishlistForm">
+        <div class="modal-form-group">
+          <label for="modalEmail">Email Address</label>
+          <input type="email" id="modalEmail" required placeholder="gamer@example.com" />
+        </div>
+
+        <div class="modal-form-group">
+          <label for="modalPin">4-Digit PIN</label>
+          <input type="password" id="modalPin" maxlength="4" pattern="\d{4}" inputmode="numeric" required placeholder="1234" />
+        </div>
+
+        <button type="submit" class="modal-submit-btn">Confirm & Save</button>
+        <div id="modalMsg"></div>
+      </form>
+    </div>
   </div>
 
   <!-- Bottom Navigation -->
@@ -327,6 +474,8 @@
     const SUPABASE_KEY = 'sb_publishable_I27CpcilWluOjUSSb6y_pQ_t9ylEjmB';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    let currentGameTitle = '';
+
     // 3. Fetch Game Detail based on URL parameter (?id=X)
     async function fetchGameDetail() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -352,6 +501,9 @@
         return;
       }
 
+      // Store Title for Wishlist
+      currentGameTitle = game.title;
+
       // Populate UI
       document.title = `${game.title} - Homebrew Hive`;
       document.getElementById('gameTitle').textContent = game.title;
@@ -366,6 +518,71 @@
     }
 
     fetchGameDetail();
+
+    // 4. Modal Handling & Wishlist Submission
+    const modal = document.getElementById('wishlistModal');
+    const openModalBtn = document.getElementById('openWishlistModal');
+    const closeModalBtn = document.getElementById('closeWishlistModal');
+    const wishlistForm = document.getElementById('wishlistForm');
+    const modalMsg = document.getElementById('modalMsg');
+
+    openModalBtn.addEventListener('click', () => {
+      modal.classList.add('active');
+      modalMsg.textContent = '';
+      modalMsg.className = '';
+    });
+
+    closeModalBtn.addEventListener('click', () => {
+      modal.classList.remove('active');
+    });
+
+    wishlistForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('modalEmail').value.trim().toLowerCase();
+      const pin = document.getElementById('modalPin').value.trim();
+
+      modalMsg.textContent = 'Verifying...';
+      modalMsg.className = '';
+
+      // Verify account credentials
+      const { data: user, error: fetchErr } = await supabaseClient
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('pin', pin)
+        .single();
+
+      if (fetchErr || !user) {
+        modalMsg.textContent = 'Account not found or incorrect PIN.';
+        modalMsg.className = 'modal-error';
+        return;
+      }
+
+      // Calculate new wishlist value
+      let currentWishlist = user.wishlist ? user.wishlist.split(', ').filter(Boolean) : [];
+      if (!currentWishlist.includes(currentGameTitle)) {
+        currentWishlist.push(currentGameTitle);
+      }
+      const updatedWishlistStr = currentWishlist.join(', ');
+
+      // Update Supabase user record
+      const { error: updateErr } = await supabaseClient
+        .from('users')
+        .update({ wishlist: updatedWishlistStr })
+        .eq('id', user.id);
+
+      if (updateErr) {
+        modalMsg.textContent = 'Failed to update wishlist.';
+        modalMsg.className = 'modal-error';
+      } else {
+        modalMsg.textContent = `"${currentGameTitle}" added to your wishlist!`;
+        modalMsg.className = 'modal-success';
+        setTimeout(() => {
+          modal.classList.remove('active');
+          wishlistForm.reset();
+        }, 1800);
+      }
+    });
   </script>
 </body>
 </html>
