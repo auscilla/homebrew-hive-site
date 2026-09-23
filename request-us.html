@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Request A Kiosk - Homebrew Hive</title>
+
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f7f7f7;
+      color: #111;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Top Left Menu Trigger */
+    .menu-btn {
+      position: absolute;
+      top: 24px;
+      left: 32px;
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      color: #333;
+      cursor: pointer;
+      z-index: 10;
+      padding: 8px 0;
+    }
+
+    /* Slide-out Overlay Drawer */
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 320px;
+      height: 100%;
+      background-color: #111111;
+      color: #ffffff;
+      z-index: 100;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+    }
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .nav-links a {
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 28px;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-family: 'Impact', 'Arial Black', sans-serif;
+    }
+
+    .backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.2);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Main Container Layout */
+    .request-wrapper {
+      max-width: 900px;
+      width: 90%;
+      margin: 80px auto 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    .page-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+      text-align: center;
+      color: #555;
+      font-size: 1.05rem;
+    }
+
+    /* Form Card */
+    .form-card {
+      background: #ffffff;
+      border: 2px solid #111;
+      border-radius: 8px;
+      padding: 36px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.full-width {
+      grid-column: span 2;
+    }
+
+    .form-group label {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input {
+      padding: 12px;
+      border: 2px solid #111;
+      border-radius: 4px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .submit-btn {
+      grid-column: span 2;
+      padding: 14px;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s ease;
+    }
+
+    .submit-btn:hover {
+      background: #333;
+    }
+
+    .form-status {
+      grid-column: span 2;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    .form-status.success {
+      color: #2e7d32;
+    }
+
+    .form-status.error {
+      color: #d9534f;
+    }
+
+    /* Info Benefits Section */
+    .benefits-card {
+      background: #ffffff;
+      border: 2px solid #111;
+      border-radius: 8px;
+      padding: 36px;
+    }
+
+    .benefits-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #111;
+      padding-bottom: 10px;
+    }
+
+    .deposit-banner {
+      background: #ffcc00;
+      border: 1px solid #111;
+      border-radius: 4px;
+      padding: 16px 20px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .deposit-banner span {
+      font-size: 1.4rem;
+    }
+
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .benefit-item h4 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .benefit-item p {
+      font-size: 0.95rem;
+      color: #444;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 700px) {
+      .form-grid, .benefits-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-group.full-width, .submit-btn, .form-status {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Menu Trigger Button -->
+  <button class="menu-btn" id="openMenu">MENU</button>
+
+  <!-- Navigation Drawer -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <span>MENU</span>
+      <button class="close-btn" id="closeMenu">&times;</button>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html">HOME</a>
+      <a href="how-it-works.html">HOW IT WORKS</a>
+      <a href="games.html">GAMES</a>
+      <a href="login.html">LOGIN</a>
+      <a href="find-us.html">FIND US</a>
+      <a href="request-us.html">REQUEST US</a>
+      <a href="#contact-us">CONTACT US</a>
+    </nav>
+  </div>
+
+  <div class="backdrop" id="backdrop"></div>
+
+  <div class="request-wrapper">
+    
+    <div>
+      <h1 class="page-title">Bring A Hive To Your Shop</h1>
+      <p class="page-subtitle">Fill out the request form below to host a Homebrew Hive kiosk in your store.</p>
+    </div>
+
+    <!-- Request Form -->
+    <div class="form-card">
+      <form id="requestForm" class="form-grid" onsubmit="handleRequestSubmit(event)">
+        
+        <div class="form-group">
+          <label for="shopName">Shop Name</label>
+          <input type="text" id="shopName" required placeholder="Retro Game Central" />
+        </div>
+
+        <div class="form-group">
+          <label for="shopLocation">Shop Location (City, State)</label>
+          <input type="text" id="shopLocation" required placeholder="Tampa, FL" />
+        </div>
+
+        <div class="form-group">
+          <label for="contactName">Contact Name</label>
+          <input type="text" id="contactName" required placeholder="Alex Mercer" />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" required placeholder="owner@retroshop.com" />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="phone">Phone Number</label>
+          <input type="tel" id="phone" required placeholder="(555) 019-2834" />
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">Submit Kiosk Request</button>
+        <div id="formStatus" class="form-status"></div>
+
+      </form>
+    </div>
+
+    <!-- Program Benefits & Deposit Information -->
+    <div class="benefits-card">
+      <h3 class="benefits-title">Why Host A Homebrew Hive?</h3>
+
+      <div class="deposit-banner">
+        <span>🐝</span>
+        <div>
+          <strong>Zero Hardware Cost ($150 Refundable Security Deposit)</strong><br />
+          Game shops get the kiosk hardware for free! A fully refundable $150 deposit is held for the machine value and returned in full whenever the kiosk is returned.
+        </div>
+      </div>
+
+      <div class="benefits-grid">
+        <div class="benefit-item">
+          <h4>🔁 Repeat Foot Traffic & Updates</h4>
+          <p>Indie game developers regularly deploy fresh patches, updates, and brand-new games. Customers return to your store over and over to update their existing physical cartridges.</p>
+        </div>
+
+        <div class="benefit-item">
+          <h4>💵 Instant Passive Revenue</h4>
+          <p>Earn a direct profit margin on every blank Homebrew Hive cartridge sold and printed in your store without taking up valuable shelf inventory space.</p>
+        </div>
+
+        <div class="benefit-item">
+          <h4>🕹️ Unique In-Store Experience</h4>
+          <p>Give gamers a hands-on interactive experience they can't get anywhere else. Printing a custom physical game right inside your retro store creates a memorable destination attraction.</p>
+
+        </div>
+
+        <div class="benefit-item">
+          <h4>❤️ Support The Indie Dev Scene</h4>
+          <p>Empower local and global homebrew developers by providing them a physical brick-and-mortar storefront to display and sell their retro titles.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // 1. Menu Interactions
+    const openMenuBtn = document.getElementById('openMenu');
+    const closeMenuBtn = document.getElementById('closeMenu');
+    const drawer = document.getElementById('drawer');
+    const backdrop = document.getElementById('backdrop');
+
+    function openDrawer() {
+      drawer.classList.add('open');
+      backdrop.classList.add('active');
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      backdrop.classList.remove('active');
+    }
+
+    openMenuBtn.addEventListener('click', openDrawer);
+    closeMenuBtn.addEventListener('click', closeDrawer);
+    backdrop.addEventListener('click', closeDrawer);
+
+    // 2. Supabase Initialization
+    const SUPABASE_URL = 'https://tskbfytfjsiavwysecuk.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_I27CpcilWluOjUSSb6y_pQ_t9ylEjmB';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 3. Form Submission
+    async function handleRequestSubmit(e) {
+      e.preventDefault();
+      const statusDiv = document.getElementById('formStatus');
+      const submitBtn = document.getElementById('submitBtn');
+
+      statusDiv.textContent = 'Submitting request...';
+      statusDiv.className = 'form-status';
+      submitBtn.disabled = true;
+
+      const shopName = document.getElementById('shopName').value.trim();
+      const shopLocation = document.getElementById('shopLocation').value.trim();
+      const contactName = document.getElementById('contactName').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+
+      const { data, error } = await supabaseClient
+        .from('shop_requests')
+        .insert([
+          {
+            shop_name: shopName,
+            shop_location: shopLocation,
+            contact_name: contactName,
+            email: email,
+            phone: phone
+          }
+        ]);
+
+      if (error) {
+        console.error('Request error:', error);
+        statusDiv.textContent = 'Failed to submit request. Please try again.';
+        statusDiv.className = 'form-status error';
+        submitBtn.disabled = false;
+      } else {
+        statusDiv.textContent = 'Request submitted successfully! We will contact you soon.';
+        statusDiv.className = 'form-status success';
+        document.getElementById('requestForm').reset();
+        submitBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
