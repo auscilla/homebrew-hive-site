@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Games - Homebrew Hive</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f7f7f7;
+      color: #111;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Top Left Menu Trigger */
+    .menu-btn {
+      position: absolute;
+      top: 24px;
+      left: 32px;
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      color: #333;
+      cursor: pointer;
+      z-index: 10;
+      padding: 8px 0;
+    }
+
+    /* Slide-out Overlay Drawer */
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 320px;
+      height: 100%;
+      background-color: #111111;
+      color: #ffffff;
+      z-index: 100;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+    }
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .nav-links a {
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 28px;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-family: 'Impact', 'Arial Black', sans-serif;
+    }
+
+    .backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.2);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 60px 20px 80px;
+      text-align: center;
+    }
+
+    .page-title {
+      font-size: 2rem;
+      font-weight: 400;
+      margin-bottom: 24px;
+      color: #111;
+    }
+
+    /* Search Bar */
+    .search-container {
+      position: relative;
+      max-width: 320px;
+      margin: 0 auto 50px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 40px 10px 16px;
+      border: 2px solid #111;
+      border-radius: 4px;
+      background-color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+    }
+
+    /* Game Cartridge Grid */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px 30px;
+    }
+
+    .game-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .cartridge-img {
+      width: 100%;
+      max-width: 260px;
+      height: auto;
+      object-fit: contain;
+      transition: transform 0.2s ease;
+    }
+
+    .game-card:hover .cartridge-img {
+      transform: translateY(-4px);
+    }
+
+    .game-title {
+      margin-top: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      color: #222;
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+      .games-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .games-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .page-title {
+        font-size: 1.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Menu Trigger Button -->
+  <button class="menu-btn" id="openMenu">MENU</button>
+
+  <!-- Navigation Drawer -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <span>MENU</span>
+      <button class="close-btn" id="closeMenu">&times;</button>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html">HOME</a>
+      <a href="how-it-works.html">HOW IT WORKS</a>
+      <a href="games.html">GAMES</a>
+      <a href="#login">LOGIN</a>
+      <a href="#find-us">FIND US</a>
+      <a href="#request-us">REQUEST US</a>
+      <a href="#contact-us">CONTACT US</a>
+    </nav>
+  </div>
+
+  <div class="backdrop" id="backdrop"></div>
+
+  <!-- Page Content -->
+  <main class="container">
+    <h1 class="page-title">Current Game Selection</h1>
+
+    <!-- Search Input -->
+    <div class="search-container">
+      <input type="text" id="searchInput" class="search-input" placeholder="Search games..." />
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </div>
+
+    <!-- Games Grid -->
+    <div class="games-grid" id="gamesGrid">
+      
+      <!-- Game 1 -->
+      <a href="#" class="game-card">
+        <img src="cart-birdie-bartender.png" alt="Birdie Bartender" class="cartridge-img" />
+        <span class="game-title">Birdie Bartender</span>
+      </a>
+
+      <!-- Game 2 -->
+      <a href="#" class="game-card">
+        <img src="cart-doomslinger.png" alt="Doomslinger Dungeon" class="cartridge-img" />
+        <span class="game-title">Doomslinger Dungeon</span>
+      </a>
+
+      <!-- Game 3 -->
+      <a href="#" class="game-card">
+        <img src="cart-disco-elysium.png" alt="Disco Elysium: GBE" class="cartridge-img" />
+        <span class="game-title">Disco Elysium: GBE</span>
+      </a>
+
+      <!-- Game 4 -->
+      <a href="#" class="game-card">
+        <img src="cart-friendly-island.png" alt="Friendly Little Island" class="cartridge-img" />
+        <span class="game-title">Friendly Little Island</span>
+      </a>
+
+      <!-- Game 5 -->
+      <a href="#" class="game-card">
+        <img src="cart-capybara-village.png" alt="Capybara Village" class="cartridge-img" />
+        <span class="game-title">Capybara Village</span>
+      </a>
+
+      <!-- Game 6 -->
+      <a href="#" class="game-card">
+        <img src="cart-crisscross-cove.png" alt="CrissCross Cove" class="cartridge-img" />
+        <span class="game-title">CrissCross Cove</span>
+      </a>
+
+    </div>
+  </main>
+
+  <script>
+    const openMenuBtn = document.getElementById('openMenu');
+    const closeMenuBtn = document.getElementById('closeMenu');
+    const drawer = document.getElementById('drawer');
+    const backdrop = document.getElementById('backdrop');
+
+    function openDrawer() {
+      drawer.classList.add('open');
+      backdrop.classList.add('active');
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      backdrop.classList.remove('active');
+    }
+
+    openMenuBtn.addEventListener('click', openDrawer);
+    closeMenuBtn.addEventListener('click', closeDrawer);
+    backdrop.addEventListener('click', closeDrawer);
+
+    // Simple Filter Search JS
+    const searchInput = document.getElementById('searchInput');
+    const gameCards = document.querySelectorAll('.game-card');
+
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      gameCards.forEach(card => {
+        const title = card.querySelector('.game-title').textContent.toLowerCase();
+        card.style.display = title.includes(query) ? 'flex' : 'none';
+      });
+    });
+  </script>
+</body>
+</html>
