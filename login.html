@@ -286,17 +286,12 @@
 
     <form id="authForm" onsubmit="handleSubmit(event)">
       <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" id="username" required placeholder="Enter username" />
-      </div>
-
-      <div class="form-group" id="emailGroup" style="display: none;">
         <label for="email">Email Address</label>
-        <input type="email" id="email" placeholder="gamer@example.com" />
+        <input type="email" id="email" required placeholder="gamer@example.com" />
       </div>
 
       <div class="form-group">
-        <label for="pin">4-Digit PIN Password</label>
+        <label for="pin">4-Digit PIN</label>
         <input type="password" id="pin" maxlength="4" pattern="\d{4}" inputmode="numeric" required placeholder="1234" />
       </div>
 
@@ -311,7 +306,7 @@
 
   <!-- Account Dashboard (Hidden by default) -->
   <div class="auth-container dashboard" id="dashboardBox">
-    <h2 id="dashUsername">Welcome!</h2>
+    <h2 id="dashEmail">Welcome!</h2>
     <p id="dashRole">Account Type: Gamer</p>
 
     <div class="info-card">
@@ -373,7 +368,6 @@
       const roleText = selectedRole === 'gamer' ? 'Gamer' : 'Game Dev';
       document.getElementById('formTitle').textContent = isSignUp ? `Create ${roleText} Account` : `${roleText} Login`;
       document.getElementById('submitBtn').textContent = isSignUp ? 'Create Account' : 'Log In';
-      document.getElementById('emailGroup').style.display = isSignUp ? 'block' : 'none';
       document.getElementById('switchMode').innerHTML = isSignUp 
         ? `Already have an account? <a onclick="toggleMode()">Log In</a>` 
         : `Don't have an account? <a onclick="toggleMode()">Create Account</a>`;
@@ -383,9 +377,8 @@
     // 4. Submit Handler
     async function handleSubmit(e) {
       e.preventDefault();
-      const username = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value.trim().toLowerCase();
       const pin = document.getElementById('pin').value.trim();
-      const email = document.getElementById('email').value.trim();
       const errorMsg = document.getElementById('errorMsg');
 
       errorMsg.textContent = '';
@@ -401,9 +394,8 @@
           .from('users')
           .insert([
             { 
-              username: username, 
-              pin: pin, 
               email: email, 
+              pin: pin, 
               account_type: selectedRole,
               wishlist: '',
               purchases: ''
@@ -412,7 +404,7 @@
           .select();
 
         if (error) {
-          errorMsg.textContent = error.message.includes('unique') ? 'Username already taken.' : 'Error creating account.';
+          errorMsg.textContent = 'Error creating account. Email may already be registered.';
           return;
         }
 
@@ -423,13 +415,13 @@
         const { data, error } = await supabaseClient
           .from('users')
           .select('*')
-          .eq('username', username)
+          .eq('email', email)
           .eq('pin', pin)
           .eq('account_type', selectedRole)
           .single();
 
         if (error || !data) {
-          errorMsg.textContent = 'Invalid username or 4-digit PIN.';
+          errorMsg.textContent = 'Invalid email or 4-digit PIN.';
           return;
         }
 
@@ -441,7 +433,7 @@
       document.getElementById('authBox').style.display = 'none';
       document.getElementById('dashboardBox').style.display = 'block';
 
-      document.getElementById('dashUsername').textContent = `Welcome, ${user.username}!`;
+      document.getElementById('dashEmail').textContent = `Welcome, ${user.email}!`;
       document.getElementById('dashRole').textContent = `Account Type: ${user.account_type === 'gamer' ? 'Gamer' : 'Game Developer'}`;
       document.getElementById('dashWishlist').textContent = user.wishlist || 'No items in wishlist yet.';
       document.getElementById('dashPurchases').textContent = user.purchases || 'No past transactions found.';
