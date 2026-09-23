@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Birdie Bartender - Homebrew Hive</title>
+  <title>Game Detail - Homebrew Hive</title>
+
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -116,6 +120,7 @@
       gap: 50px;
       align-items: flex-start;
       flex: 1;
+      width: 100%;
     }
 
     /* Left Column: Cartridge View */
@@ -177,6 +182,15 @@
       border-radius: 4px;
       border: 1px solid #ddd;
       object-fit: cover;
+    }
+
+    /* Status Messages */
+    .status-msg {
+      width: 100%;
+      text-align: center;
+      padding: 100px 20px;
+      font-size: 1.2rem;
+      color: #555;
     }
 
     /* Footer Back Link */
@@ -254,22 +268,23 @@
 
   <div class="backdrop" id="backdrop"></div>
 
+  <!-- Loading View -->
+  <div id="loadingMsg" class="status-msg">Loading game details...</div>
+
   <!-- Detail Content Layout -->
-  <div class="detail-container">
+  <div class="detail-container" id="gameDetail" style="display: none;">
     
     <!-- Left Column: Hero Cartridge -->
     <div class="cartridge-col">
-      <img src="cart-birdie-bartender.png" alt="Birdie Bartender Game Boy Cartridge" class="hero-cartridge" />
+      <img id="cartImg" src="" alt="Game Cartridge" class="hero-cartridge" />
     </div>
 
     <!-- Right Column: Details & Screenshots -->
     <div class="info-col">
-      <h1 class="game-header-title">BIRDIE BARTENDER</h1>
-      <p class="print-price">PRINT PRICE: $19.99</p>
+      <h1 class="game-header-title" id="gameTitle"></h1>
+      <p class="print-price" id="gamePrice"></p>
       
-      <p class="game-description">
-        Join the most feathered bartender in the forest! Mix and serve wild seed cocktails to a variety of avian patrons. Master a complex menu, unlock new recipes, and manage the flock. Features classic pixel-art adventure and unique puzzle-mixing mechanics.
-      </p>
+      <p class="game-description" id="gameDesc"></p>
 
       <div class="screenshots-row">
         <img src="shot1.png" alt="Screenshot 1" class="screenshot-img" />
@@ -287,6 +302,7 @@
   </footer>
 
   <script>
+    // 1. Menu Interactions
     const openMenuBtn = document.getElementById('openMenu');
     const closeMenuBtn = document.getElementById('closeMenu');
     const drawer = document.getElementById('drawer');
@@ -305,6 +321,51 @@
     openMenuBtn.addEventListener('click', openDrawer);
     closeMenuBtn.addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
+
+    // 2. Supabase Initialization
+    const SUPABASE_URL = 'https://tskbfytfjsiavwysecuk.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_I27CpcilWluOjUSSb6y_pQ_t9ylEjmB';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 3. Fetch Game Detail based on URL parameter (?id=X)
+    async function fetchGameDetail() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const gameId = urlParams.get('id');
+
+      const loadingMsg = document.getElementById('loadingMsg');
+      const gameDetail = document.getElementById('gameDetail');
+
+      if (!gameId) {
+        loadingMsg.textContent = 'No game selected.';
+        return;
+      }
+
+      const { data: game, error } = await supabaseClient
+        .from('games')
+        .select('*')
+        .eq('id', gameId)
+        .single();
+
+      if (error || !game) {
+        console.error('Error fetching game details:', error);
+        loadingMsg.textContent = 'Game not found.';
+        return;
+      }
+
+      // Populate UI
+      document.title = `${game.title} - Homebrew Hive`;
+      document.getElementById('gameTitle').textContent = game.title;
+      document.getElementById('gamePrice').textContent = `PRINT PRICE: ${game.price || '$19.99'}`;
+      document.getElementById('gameDesc').textContent = game.description || '';
+      document.getElementById('cartImg').src = game.cartridge_image_url || game.image_url;
+      document.getElementById('cartImg').alt = game.title;
+
+      // Show container
+      loadingMsg.style.display = 'none';
+      gameDetail.style.display = 'flex';
+    }
+
+    fetchGameDetail();
   </script>
 </body>
 </html>
