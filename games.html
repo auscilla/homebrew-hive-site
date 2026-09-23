@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Games - Homebrew Hive</title>
+  
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -147,7 +151,7 @@
       pointer-events: none;
     }
 
-    /* Game Cartridge Grid */
+    /* Dynamic Games Grid */
     .games-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -179,6 +183,12 @@
       font-size: 15px;
       font-weight: 500;
       color: #222;
+    }
+
+    .loading-msg {
+      grid-column: 1 / -1;
+      font-size: 1.1rem;
+      color: #666;
     }
 
     /* Mobile Responsiveness */
@@ -237,49 +247,14 @@
       </svg>
     </div>
 
-    <!-- Games Grid -->
+    <!-- Dynamic Games Grid -->
     <div class="games-grid" id="gamesGrid">
-      
-      <!-- Game 1 -->
-      <a href="game-detail.html" class="game-card">
-        <img src="cart-birdie-bartender.png" alt="Birdie Bartender" class="cartridge-img" />
-        <span class="game-title">Birdie Bartender</span>
-      </a>
-
-      <!-- Game 2 -->
-      <a href="#" class="game-card">
-        <img src="cart-doomslinger.png" alt="Doomslinger Dungeon" class="cartridge-img" />
-        <span class="game-title">Doomslinger Dungeon</span>
-      </a>
-
-      <!-- Game 3 -->
-      <a href="#" class="game-card">
-        <img src="cart-disco-elysium.png" alt="Disco Elysium: GBE" class="cartridge-img" />
-        <span class="game-title">Disco Elysium: GBE</span>
-      </a>
-
-      <!-- Game 4 -->
-      <a href="#" class="game-card">
-        <img src="cart-friendly-island.png" alt="Friendly Little Island" class="cartridge-img" />
-        <span class="game-title">Friendly Little Island</span>
-      </a>
-
-      <!-- Game 5 -->
-      <a href="#" class="game-card">
-        <img src="cart-capybara-village.png" alt="Capybara Village" class="cartridge-img" />
-        <span class="game-title">Capybara Village</span>
-      </a>
-
-      <!-- Game 6 -->
-      <a href="#" class="game-card">
-        <img src="cart-crisscross-cove.png" alt="CrissCross Cove" class="cartridge-img" />
-        <span class="game-title">CrissCross Cove</span>
-      </a>
-
+      <p class="loading-msg">Loading games catalog...</p>
     </div>
   </main>
 
   <script>
+    // 1. Menu Interactions
     const openMenuBtn = document.getElementById('openMenu');
     const closeMenuBtn = document.getElementById('closeMenu');
     const drawer = document.getElementById('drawer');
@@ -299,17 +274,62 @@
     closeMenuBtn.addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
 
-    // Simple Filter Search JS
-    const searchInput = document.getElementById('searchInput');
-    const gameCards = document.querySelectorAll('.game-card');
+    // 2. Supabase Initialization
+    const SUPABASE_URL = 'https://tskbfytfjsiavwysecuk.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_I27CpcilWluOjUSSb6y_pQ_t9ylEjmB'; 
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    searchInput.addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      gameCards.forEach(card => {
-        const title = card.querySelector('.game-title').textContent.toLowerCase();
-        card.style.display = title.includes(query) ? 'flex' : 'none';
+    let GAMES_DATA = [];
+
+    // 3. Render Game Cards
+    function renderGameCards(games) {
+      const grid = document.getElementById('gamesGrid');
+      grid.innerHTML = '';
+
+      if (games.length === 0) {
+        grid.innerHTML = '<p class="loading-msg">No games found.</p>';
+        return;
+      }
+
+      games.forEach(game => {
+        const imgSrc = game.cartridge_image_url || game.image_url;
+        
+        const card = document.createElement('a');
+        card.className = 'game-card';
+        card.href = `game-detail.html?id=${game.id}`;
+        card.innerHTML = `
+          <img src="${imgSrc}" alt="${game.title}" class="cartridge-img" />
+          <span class="game-title">${game.title}</span>
+        `;
+        grid.appendChild(card);
       });
+    }
+
+    // 4. Fetch Games from Supabase
+    async function loadGamesFromSupabase() {
+      const { data, error } = await supabaseClient
+        .from('games')
+        .select('*');
+
+      if (error) {
+        console.error('Error fetching games from Supabase:', error);
+        document.getElementById('gamesGrid').innerHTML = '<p class="loading-msg">Failed to load games catalog.</p>';
+        return;
+      }
+
+      GAMES_DATA = data;
+      renderGameCards(GAMES_DATA);
+    }
+
+    // 5. Search Filter
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      const filtered = GAMES_DATA.filter(g => g.title.toLowerCase().includes(query));
+      renderGameCards(filtered);
     });
+
+    // Initial Load
+    loadGamesFromSupabase();
   </script>
 </body>
 </html>
