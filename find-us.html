@@ -136,47 +136,78 @@
       position: relative;
       width: 100%;
       max-width: 850px;
-      margin: 0 auto 40px;
+      margin: 0 auto 30px;
       background: #ffffff;
       border: 2px solid #111;
       border-radius: 8px;
-      padding: 20px;
+      padding: 24px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      user-select: none;
     }
 
-    .us-map-svg {
+    .map-wrapper {
+      position: relative;
       width: 100%;
-      height: auto;
-      display: block;
+      padding-bottom: 62.5%; /* 16:10 aspect ratio */
+      background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/1a/Blank_US_Map_%28states_only%29.svg');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
     }
 
-    /* Interactive Bee Pin Styles */
-    .bee-marker {
+    /* Bee Pin Buttons Overlay */
+    .bee-pin {
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      margin-left: -18px;
+      margin-top: -18px;
       cursor: pointer;
-      transition: transform 0.2s ease;
-      transform-origin: center;
+      background: none;
+      border: none;
+      outline: none;
+      z-index: 10;
+      transition: transform 0.2s ease-in-out;
     }
 
-    .bee-marker:hover {
+    .bee-pin:hover {
       transform: scale(1.3);
     }
 
-    .bee-marker.active {
+    .bee-pin.active {
       transform: scale(1.4);
+      z-index: 20;
+    }
+
+    .bee-pin svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));
     }
 
     .pulse-ring {
-      animation: pulse 2s infinite;
-      transform-origin: center;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 36px;
+      height: 36px;
+      margin-top: -18px;
+      margin-left: -18px;
+      border-radius: 50%;
+      background: rgba(255, 204, 0, 0.5);
+      animation: pulse 2s infinite ease-out;
+      pointer-events: none;
+      z-index: 5;
     }
 
     @keyframes pulse {
       0% {
-        r: 10px;
-        opacity: 0.8;
+        transform: scale(0.8);
+        opacity: 0.9;
       }
       100% {
-        r: 28px;
+        transform: scale(2.2);
         opacity: 0;
       }
     }
@@ -190,10 +221,11 @@
       border-radius: 8px;
       padding: 28px;
       text-align: left;
-      min-height: 160px;
+      min-height: 150px;
       display: flex;
       flex-direction: column;
       justify-content: center;
+      transition: all 0.2s ease;
     }
 
     .info-header {
@@ -235,7 +267,6 @@
       font-style: italic;
     }
 
-    /* Responsive adjustments */
     @media (max-width: 600px) {
       .container {
         padding-top: 70px;
@@ -280,41 +311,35 @@
     <h1 class="page-title">Find A Hive Near You</h1>
     <p class="page-subtitle">Click a bee pin on the map to view kiosk location details and hours.</p>
 
-    <!-- US Map Container -->
+    <!-- Map Box Container -->
     <div class="map-container">
-      <svg class="us-map-svg" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg">
-        <!-- US Outline Base -->
-        <path d="M 170 120 L 250 110 L 320 130 L 450 130 L 600 120 L 730 110 L 800 80 L 870 100 L 920 130 L 930 180 L 880 230 L 910 270 L 890 320 L 820 310 L 830 380 L 820 460 L 790 530 L 750 560 L 730 500 L 730 420 L 670 410 L 600 410 L 530 440 L 480 490 L 450 510 L 380 430 L 280 400 L 230 380 L 170 370 L 120 300 L 50 240 L 40 180 L 100 130 Z" fill="#eaeaea" stroke="#cccccc" stroke-width="2" />
+      <div class="map-wrapper">
         
-        <!-- Simplified State Borders Grid Lines -->
-        <path d="M 120 300 L 280 290 L 450 300 L 600 290 L 820 310 M 320 130 L 330 390 M 450 130 L 460 490 M 600 120 L 600 410 M 730 110 L 730 420" fill="none" stroke="#e0e0e0" stroke-width="1.5" stroke-dasharray="4 4" />
+        <!-- 1. Tampa, FL Bee -->
+        <div class="pulse-ring" style="left: 77.5%; top: 82%;"></div>
+        <button class="bee-pin" id="pinTampa" style="left: 77.5%; top: 82%;" onclick="selectHive(event, 'tampa')" title="Tampa Hive">
+          <svg viewBox="0 0 40 40">
+            <ellipse cx="20" cy="20" rx="12" ry="16" fill="#ffcc00" stroke="#111" stroke-width="2" transform="rotate(-30 20 20)" />
+            <line x1="12" y1="17" x2="28" y2="17" stroke="#111" stroke-width="3" />
+            <line x1="12" y1="23" x2="28" y2="23" stroke="#111" stroke-width="3" />
+            <ellipse cx="11" cy="12" rx="6" ry="10" fill="#ffffff" stroke="#111" stroke-width="1.5" opacity="0.9" transform="rotate(-40 11 12)" />
+            <ellipse cx="29" cy="12" rx="6" ry="10" fill="#ffffff" stroke="#111" stroke-width="1.5" opacity="0.9" transform="rotate(20 29 12)" />
+          </svg>
+        </button>
 
-        <!-- 1. TAMPA, FL BEE MARKER (Coordinates ~ 765, 490) -->
-        <g class="bee-marker" id="markerTampa" onclick="selectHive('tampa')" transform="translate(765, 490)">
-          <circle class="pulse-ring" cx="0" cy="0" r="14" fill="#ffcc00" />
-          <!-- Bee Body Icon -->
-          <ellipse cx="0" cy="0" rx="12" ry="16" fill="#ffcc00" stroke="#111" stroke-width="2" transform="rotate(-30)" />
-          <!-- Stripes -->
-          <line x1="-8" y1="-3" x2="8" y2="-3" stroke="#111" stroke-width="3" />
-          <line x1="-8" y1="3" x2="8" y2="3" stroke="#111" stroke-width="3" />
-          <!-- Wings -->
-          <ellipse cx="-10" cy="-8" rx="6" ry="10" fill="#ffffff" stroke="#111" stroke-width="1.5" opacity="0.8" transform="rotate(-40)" />
-          <ellipse cx="10" cy="-8" rx="6" ry="10" fill="#ffffff" stroke="#111" stroke-width="1.5" opacity="0.8" transform="rotate(20)" />
-        </g>
+        <!-- 2. New Haven, CT Bee -->
+        <div class="pulse-ring" style="left: 90.5%; top: 29%;"></div>
+        <button class="bee-pin" id="pinNewHaven" style="left: 90.5%; top: 29%;" onclick="selectHive(event, 'newhaven')" title="New Haven Hive">
+          <svg viewBox="0 0 40 40">
+            <ellipse cx="20" cy="20" rx="12" ry="16" fill="#ffcc00" stroke="#111" stroke-width="2" transform="rotate(20 20 20)" />
+            <line x1="12" y1="17" x2="28" y2="17" stroke="#111" stroke-width="3" />
+            <line x1="12" y1="23" x2="28" y2="23" stroke="#111" stroke-width="3" />
+            <ellipse cx="11" cy="12" rx="6" ry="10" fill="#ffffff" stroke="#111" stroke-width="1.5" opacity="0.9" transform="rotate(-20 11 12)" />
+            <ellipse cx="29" cy="12" rx="6" ry="10" fill="#ffffff" stroke="#111" stroke-width="1.5" opacity="0.9" transform="rotate(40 29 12)" />
+          </svg>
+        </button>
 
-        <!-- 2. NEW HAVEN, CT BEE MARKER (Coordinates ~ 885, 175) -->
-        <g class="bee-marker" id="markerNewHaven" onclick="selectHive('newhaven')" transform="translate(885, 175)">
-          <circle class="pulse-ring" cx="0" cy="0" r="14" fill="#ffcc00" />
-          <!-- Bee Body Icon -->
-          <ellipse cx="0" cy="0" rx="12" ry="16" fill="#ffcc00" stroke="#111" stroke-width="2" transform="rotate(20)" />
-          <!-- Stripes -->
-          <line x1="-8" y1="-3" x2="8" y2="-3" stroke="#111" stroke-width="3" />
-          <line x1="-8" y1="3" x2="8" y2="3" stroke="#111" stroke-width="3" />
-          <!-- Wings -->
-          <ellipse cx="-10" cy="-8" rx="6" ry="10" fill="#ffffff" stroke="#111" stroke-width="1.5" opacity="0.8" transform="rotate(-20)" />
-          <ellipse cx="10" cy="-8" rx="6" ry="10" fill="#ffffff" stroke="#111" stroke-width="1.5" opacity="0.8" transform="rotate(40)" />
-        </g>
-      </svg>
+      </div>
     </div>
 
     <!-- Location Info Card -->
@@ -346,11 +371,10 @@
     closeMenuBtn.addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
 
-    // 2. Hive Locations Data
+    // 2. Hive Data
     const hives = {
       tampa: {
         name: "Tampa Hive - Retro Game Arcade",
-        location: "Tampa, Florida",
         address: "1204 Ybor City Blvd, Tampa, FL 33605",
         hours: "Mon - Sun: 10:00 AM - 11:00 PM",
         status: "Active - Fully Stocked",
@@ -358,7 +382,6 @@
       },
       newhaven: {
         name: "New Haven Hive - Elm City Lounge",
-        location: "New Haven, Connecticut",
         address: "245 Chapel St, New Haven, CT 06511",
         hours: "Mon - Sat: 11:00 AM - 10:00 PM",
         status: "Active - Fully Stocked",
@@ -367,15 +390,17 @@
     };
 
     // 3. Selection Handler
-    function selectHive(key) {
+    function selectHive(event, key) {
+      if (event) event.stopPropagation();
+
       const hive = hives[key];
       const card = document.getElementById('infoCard');
 
-      // Update Active Marker Visuals
-      document.getElementById('markerTampa').classList.toggle('active', key === 'tampa');
-      document.getElementById('markerNewHaven').classList.toggle('active', key === 'newhaven');
+      // Toggle active states on pins
+      document.getElementById('pinTampa').classList.toggle('active', key === 'tampa');
+      document.getElementById('pinNewHaven').classList.toggle('active', key === 'newhaven');
 
-      // Populate Details Box
+      // Update details view
       card.innerHTML = `
         <div class="info-header">
           <h2 class="info-title">${hive.name}</h2>
