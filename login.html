@@ -114,14 +114,15 @@
 
     /* Auth Container Box */
     .auth-container {
-      max-width: 420px;
-      width: 90%;
-      margin: 100px auto 40px;
+      max-width: 440px;
+      width: 92%;
+      margin: 80px auto 40px;
       background: #ffffff;
-      padding: 32px;
+      padding: 32px 24px;
       border: 2px solid #111;
       border-radius: 8px;
       text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
     .role-toggle {
@@ -215,10 +216,15 @@
     }
 
     .dashboard h2 {
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+      font-size: 1.5rem;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      hyphens: auto;
+      line-height: 1.25;
     }
 
-    .dashboard p {
+    .dashboard p.sub-text {
       color: #555;
       font-size: 14px;
       margin-bottom: 20px;
@@ -228,24 +234,87 @@
       background: #f9f9f9;
       border: 1px solid #ddd;
       padding: 16px;
-      border-radius: 4px;
+      border-radius: 6px;
       margin-bottom: 16px;
     }
 
     .info-card h3 {
-      font-size: 14px;
-      margin-bottom: 8px;
+      font-size: 13px;
+      margin-bottom: 10px;
       text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #333;
+    }
+
+    /* Wishlist Tag List */
+    .wishlist-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .wishlist-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #111;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .wishlist-tag button {
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .wishlist-tag button:hover {
+      color: #ff3333;
+    }
+
+    .empty-msg {
+      color: #777;
+      font-size: 13px;
+      font-style: italic;
     }
 
     .logout-btn {
-      padding: 8px 16px;
+      padding: 10px 20px;
       background: #d9534f;
       color: #fff;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       font-weight: 600;
+      font-size: 14px;
+    }
+
+    /* Mobile Layout Adjustments */
+    @media (max-width: 480px) {
+      .auth-container {
+        padding: 24px 16px;
+        margin-top: 70px;
+      }
+
+      .dashboard h2 {
+        font-size: 1.25rem;
+      }
+
+      .menu-btn {
+        left: 20px;
+        top: 20px;
+      }
     }
   </style>
 </head>
@@ -304,19 +373,19 @@
     </div>
   </div>
 
-  <!-- Account Dashboard (Hidden by default) -->
+  <!-- Account Dashboard -->
   <div class="auth-container dashboard" id="dashboardBox">
     <h2 id="dashEmail">Welcome!</h2>
-    <p id="dashRole">Account Type: Gamer</p>
+    <p class="sub-text" id="dashRole">Account Type: Gamer</p>
 
     <div class="info-card">
       <h3>Wishlist</h3>
-      <p id="dashWishlist">No items in wishlist yet.</p>
+      <div id="dashWishlist" class="wishlist-tags"></div>
     </div>
 
     <div class="info-card">
       <h3>Past Purchases</h3>
-      <p id="dashPurchases">No past transactions found.</p>
+      <p id="dashPurchases" class="empty-msg">No past transactions found.</p>
     </div>
 
     <button class="logout-btn" onclick="logout()">Log Out</button>
@@ -351,6 +420,7 @@
     // 3. State Management
     let selectedRole = 'gamer'; 
     let isSignUp = false;
+    let currentUser = null;
 
     function setRole(role) {
       selectedRole = role;
@@ -408,7 +478,8 @@
           return;
         }
 
-        showDashboard(data[0]);
+        currentUser = data[0];
+        showDashboard(currentUser);
 
       } else {
         // Login Check
@@ -425,21 +496,72 @@
           return;
         }
 
-        showDashboard(data);
+        currentUser = data;
+        showDashboard(currentUser);
       }
     }
 
+    // 5. Dashboard & Interactive Wishlist Rendering
     function showDashboard(user) {
       document.getElementById('authBox').style.display = 'none';
       document.getElementById('dashboardBox').style.display = 'block';
 
       document.getElementById('dashEmail').textContent = `Welcome, ${user.email}!`;
       document.getElementById('dashRole').textContent = `Account Type: ${user.account_type === 'gamer' ? 'Gamer' : 'Game Developer'}`;
-      document.getElementById('dashWishlist').textContent = user.wishlist || 'No items in wishlist yet.';
+
+      renderWishlist(user.wishlist);
       document.getElementById('dashPurchases').textContent = user.purchases || 'No past transactions found.';
     }
 
+    function renderWishlist(wishlistStr) {
+      const container = document.getElementById('dashWishlist');
+      container.innerHTML = '';
+
+      const items = wishlistStr ? wishlistStr.split(', ').filter(Boolean) : [];
+
+      if (items.length === 0) {
+        container.innerHTML = '<p class="empty-msg">No items in wishlist yet.</p>';
+        return;
+      }
+
+      items.forEach(item => {
+        const tag = document.createElement('div');
+        tag.className = 'wishlist-tag';
+        tag.innerHTML = `
+          <span>${item}</span>
+          <button onclick="removeFromWishlist('${item.replace(/'/g, "\\'")}')" title="Remove">&times;</button>
+        `;
+        container.appendChild(tag);
+      });
+    }
+
+    // 6. Remove Item from Wishlist & Update Supabase
+    async function removeFromWishlist(itemToRemove) {
+      if (!currentUser) return;
+
+      let items = currentUser.wishlist ? currentUser.wishlist.split(', ').filter(Boolean) : [];
+      items = items.filter(i => i !== itemToRemove);
+
+      const newWishlistStr = items.join(', ');
+
+      // Update Supabase
+      const { error } = await supabaseClient
+        .from('users')
+        .update({ wishlist: newWishlistStr })
+        .eq('id', currentUser.id);
+
+      if (error) {
+        console.error('Error removing item from wishlist:', error);
+        alert('Failed to update wishlist. Please try again.');
+
+      } else {
+        currentUser.wishlist = newWishlistStr;
+        renderWishlist(newWishlistStr);
+      }
+    }
+
     function logout() {
+      currentUser = null;
       document.getElementById('authBox').style.display = 'block';
       document.getElementById('dashboardBox').style.display = 'none';
       document.getElementById('authForm').reset();
