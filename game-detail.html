@@ -111,65 +111,67 @@
       pointer-events: auto;
     }
 
-    /* Main Detail Layout Container */
-    .detail-container {
-      max-width: 1050px;
-      margin: 0 auto;
-      padding: 90px 24px 40px;
-      display: flex;
-      gap: 50px;
-      align-items: flex-start;
-      flex: 1;
+    /* Main Container */
+    .container {
+      max-width: 1000px;
+      margin: 80px auto 40px;
+      padding: 0 20px;
       width: 100%;
     }
 
-    /* Left Column: Cartridge View */
-    .cartridge-col {
-      flex: 0 0 320px;
-      display: flex;
-      justify-content: center;
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 50px;
+      align-items: start;
     }
 
-    .hero-cartridge {
+    .main-media-box {
+      text-align: center;
+    }
+
+    .main-cartridge-img {
       width: 100%;
       max-width: 320px;
       height: auto;
       object-fit: contain;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: transform 0.2s ease;
     }
 
-    /* Right Column: Game Info & Media */
-    .info-col {
-      flex: 1;
+    .main-cartridge-img:hover {
+      transform: scale(1.02);
+    }
+
+    .info-box {
       display: flex;
       flex-direction: column;
+      gap: 16px;
     }
 
-    .game-header-title {
-      font-size: 2.4rem;
+    .game-title {
+      font-size: 2.2rem;
       font-weight: 800;
+      text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #111;
-      margin-bottom: 6px;
+    }
+
+    .price-tag {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #222;
       text-transform: uppercase;
     }
 
-    .print-price {
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: #111;
-      margin-bottom: 20px;
+    .description {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #444;
     }
 
-    .game-description {
-      font-size: 1.1rem;
-      line-height: 1.5;
-      color: #333;
-      margin-bottom: 30px;
-      max-width: 600px;
-    }
-
-    /* Wishlist Button */
-    .wishlist-btn {
+    .action-btn {
+      display: inline-block;
       align-self: flex-start;
       padding: 12px 24px;
       background-color: #111;
@@ -178,196 +180,164 @@
       border-radius: 4px;
       font-size: 14px;
       font-weight: 700;
-      letter-spacing: 1px;
       text-transform: uppercase;
       cursor: pointer;
-      margin-bottom: 24px;
-      transition: background-color 0.2s ease;
+      transition: background 0.2s ease;
     }
 
-    .wishlist-btn:hover {
+    .action-btn:hover {
       background-color: #333;
     }
 
-    /* Screenshot Gallery Row */
-    .screenshots-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
+    .action-btn.added {
+      background-color: #2e7d32;
+    }
+
+    /* Screenshots Grid */
+    .screenshots-grid {
+      display: flex;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-top: 10px;
+      flex-wrap: wrap;
     }
 
-    .screenshot-img {
-      width: 100%;
-      height: auto;
-      border-radius: 4px;
-      border: 1px solid #ddd;
+    .screenshot-thumb {
+      width: 90px;
+      height: 70px;
       object-fit: cover;
+      border: 2px solid #111;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease;
     }
 
-    /* Status Messages */
-    .status-msg {
-      width: 100%;
+    .screenshot-thumb:hover {
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+
+    .return-link {
+      display: block;
       text-align: center;
-      padding: 100px 20px;
-      font-size: 1.2rem;
+      margin-top: 60px;
       color: #555;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
-    /* Wishlist Modal Window */
-    .modal-overlay {
+    .return-link:hover {
+      color: #111;
+    }
+
+    /* Lightbox Modal */
+    .lightbox-modal {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.85);
       z-index: 200;
       display: none;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
     }
 
-    .modal-overlay.active {
+    .lightbox-modal.active {
       display: flex;
     }
 
-    .modal-box {
-      background: #ffffff;
-      padding: 32px;
-      border-radius: 8px;
-      border: 2px solid #111;
-      width: 90%;
-      max-width: 380px;
-      text-align: center;
+    .lightbox-content {
       position: relative;
+      max-width: 85vw;
+      max-height: 85vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .modal-close {
+    .lightbox-img {
+      max-width: 80vw;
+      max-height: 80vh;
+      object-fit: contain;
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    /* Lightbox Controls */
+    .lightbox-close {
       position: absolute;
-      top: 12px;
-      right: 16px;
+      top: 24px;
+      right: 32px;
       background: none;
       border: none;
-      font-size: 20px;
-      cursor: pointer;
-    }
-
-    .modal-title {
-      font-size: 1.3rem;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-    }
-
-    .modal-subtitle {
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 20px;
-    }
-
-    .modal-form-group {
-      margin-bottom: 16px;
-      text-align: left;
-    }
-
-    .modal-form-group label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-
-    .modal-form-group input {
-      width: 100%;
-      padding: 10px;
-      border: 2px solid #111;
-      border-radius: 4px;
-      font-size: 14px;
-      outline: none;
-    }
-
-    .modal-submit-btn {
-      width: 100%;
-      padding: 12px;
-      background: #111;
       color: #fff;
-      border: none;
-      border-radius: 4px;
-      font-weight: 700;
-      text-transform: uppercase;
+      font-size: 36px;
+      font-weight: 300;
       cursor: pointer;
+      z-index: 210;
+      line-height: 1;
     }
 
-    .modal-error {
-      color: #d9534f;
-      font-size: 13px;
-      margin-top: 10px;
+    .lightbox-close:hover {
+      color: #ffcc00;
     }
 
-    .modal-success {
-      color: #2e7d32;
-      font-size: 13px;
-      margin-top: 10px;
+    .lightbox-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(17, 17, 17, 0.7);
+      color: #fff;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      z-index: 210;
+      transition: background 0.2s ease, transform 0.2s ease;
     }
 
-    /* Footer Back Link */
-    .footer-nav {
-      text-align: center;
-      padding: 30px 20px 50px;
+    .lightbox-arrow:hover {
+      background: #ffcc00;
+      color: #111;
+      border-color: #111;
     }
 
-    .back-link {
-      font-size: 13px;
-      font-weight: 500;
-      letter-spacing: 1px;
-      color: #333;
-      text-decoration: none;
-      text-transform: uppercase;
+    .lightbox-arrow.left {
+      left: 30px;
     }
 
-    .back-link:hover {
-      text-decoration: underline;
+    .lightbox-arrow.right {
+      right: 30px;
     }
 
-    /* Mobile Responsive Optimizations */
-    @media (max-width: 850px) {
-      .detail-container {
-        flex-direction: column;
-        align-items: center;
-        padding-top: 70px;
+    @media (max-width: 768px) {
+      .detail-grid {
+        grid-template-columns: 1fr;
         gap: 30px;
       }
-
-      .cartridge-col {
-        flex: initial;
-        width: 100%;
-        max-width: 260px;
+      .lightbox-arrow {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
       }
-
-      .info-col {
-        width: 100%;
-        text-align: center;
-      }
-
-      .game-description {
-        margin-left: auto;
-        margin-right: auto;
-      }
-
-      .wishlist-btn {
-        align-self: center;
-      }
-
-      .screenshots-row {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-      }
+      .lightbox-arrow.left { left: 10px; }
+      .lightbox-arrow.right { right: 10px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Menu Button -->
+  <!-- Menu Trigger Button -->
   <button class="menu-btn" id="openMenu">MENU</button>
 
   <!-- Navigation Drawer -->
@@ -389,64 +359,42 @@
 
   <div class="backdrop" id="backdrop"></div>
 
-  <!-- Loading View -->
-  <div id="loadingMsg" class="status-msg">Loading game details...</div>
-
-  <!-- Detail Content Layout -->
-  <div class="detail-container" id="gameDetail" style="display: none;">
-    
-    <!-- Left Column: Hero Cartridge -->
-    <div class="cartridge-col">
-      <img id="cartImg" src="" alt="Game Cartridge" class="hero-cartridge" />
-    </div>
-
-    <!-- Right Column: Details & Screenshots -->
-    <div class="info-col">
-      <h1 class="game-header-title" id="gameTitle"></h1>
-      <p class="print-price" id="gamePrice"></p>
+  <main class="container">
+    <div class="detail-grid">
       
-      <p class="game-description" id="gameDesc"></p>
-
-      <button class="wishlist-btn" id="openWishlistModal">+ Add to Wishlist</button>
-
-      <div class="screenshots-row">
-        <img src="shot1.png" alt="Screenshot 1" class="screenshot-img" />
-        <img src="shot2.png" alt="Screenshot 2" class="screenshot-img" />
-        <img src="shot3.png" alt="Screenshot 3" class="screenshot-img" />
-        <img src="shot4.png" alt="Screenshot 4" class="screenshot-img" />
+      <!-- Main Image Box -->
+      <div class="main-media-box">
+        <img id="cartridgeImg" src="" alt="Game Cartridge" class="main-cartridge-img" onclick="openLightbox(0)" />
       </div>
+
+      <!-- Info Details -->
+      <div class="info-box">
+        <h1 id="gameTitle" class="game-title">Loading...</h1>
+        <div id="gamePrice" class="price-tag">Print Price: $--.--</div>
+        <p id="gameDesc" class="description"></p>
+
+        <button id="wishlistBtn" class="action-btn" onclick="toggleWishlist()">+ Add to Wishlist</button>
+
+        <!-- Screenshots -->
+        <div id="screenshotsGrid" class="screenshots-grid"></div>
+      </div>
+
     </div>
 
-  </div>
+    <a href="games.html" class="return-link">Return to Selection</a>
+  </main>
 
-  <!-- Wishlist Modal -->
-  <div class="modal-overlay" id="wishlistModal">
-    <div class="modal-box">
-      <button class="modal-close" id="closeWishlistModal">&times;</button>
-      <h3 class="modal-title">Save to Wishlist</h3>
-      <p class="modal-subtitle">Enter your email and 4-digit PIN to save this game to your profile.</p>
-
-      <form id="wishlistForm">
-        <div class="modal-form-group">
-          <label for="modalEmail">Email Address</label>
-          <input type="email" id="modalEmail" required placeholder="gamer@example.com" />
-        </div>
-
-        <div class="modal-form-group">
-          <label for="modalPin">4-Digit PIN</label>
-          <input type="password" id="modalPin" maxlength="4" pattern="\d{4}" inputmode="numeric" required placeholder="1234" />
-        </div>
-
-        <button type="submit" class="modal-submit-btn">Confirm & Save</button>
-        <div id="modalMsg"></div>
-      </form>
+  <!-- Lightbox Modal -->
+  <div class="lightbox-modal" id="lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <button class="lightbox-arrow left" onclick="navigateLightbox(-1)">&#8249;</button>
+    
+    <div class="lightbox-content" onclick="event.stopPropagation()">
+      <img id="lightboxImg" class="lightbox-img" src="" alt="Enlarged View" />
     </div>
-  </div>
 
-  <!-- Bottom Navigation -->
-  <footer class="footer-nav">
-    <a href="games.html" class="back-link">RETURN TO SELECTION</a>
-  </footer>
+    <button class="lightbox-arrow right" onclick="navigateLightbox(1)">&#8250;</button>
+  </div>
 
   <script>
     // 1. Menu Interactions
@@ -474,115 +422,102 @@
     const SUPABASE_KEY = 'sb_publishable_I27CpcilWluOjUSSb6y_pQ_t9ylEjmB';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let currentGameTitle = '';
+    let currentGame = null;
+    let galleryImages = [];
+    let currentImageIndex = 0;
 
-    // 3. Fetch Game Detail based on URL parameter (?id=X)
-    async function fetchGameDetail() {
+    // 3. Fetch Game Data
+    async function loadGameDetail() {
       const urlParams = new URLSearchParams(window.location.search);
       const gameId = urlParams.get('id');
 
-      const loadingMsg = document.getElementById('loadingMsg');
-      const gameDetail = document.getElementById('gameDetail');
-
       if (!gameId) {
-        loadingMsg.textContent = 'No game selected.';
+        window.location.href = 'games.html';
         return;
       }
 
-      const { data: game, error } = await supabaseClient
+      const { data, error } = await supabaseClient
         .from('games')
         .select('*')
         .eq('id', gameId)
         .single();
 
-      if (error || !game) {
+      if (error || !data) {
         console.error('Error fetching game details:', error);
-        loadingMsg.textContent = 'Game not found.';
+        document.getElementById('gameTitle').textContent = 'Game Not Found';
         return;
       }
 
-      // Store Title for Wishlist
-      currentGameTitle = game.title;
+      currentGame = data;
 
-      // Populate UI
-      document.title = `${game.title} - Homebrew Hive`;
-      document.getElementById('gameTitle').textContent = game.title;
-      document.getElementById('gamePrice').textContent = `PRINT PRICE: ${game.price || '$19.99'}`;
-      document.getElementById('gameDesc').textContent = game.description || '';
-      document.getElementById('cartImg').src = game.cartridge_image_url || game.image_url;
-      document.getElementById('cartImg').alt = game.title;
+      // Populate Text & Details
+      document.getElementById('gameTitle').textContent = data.title;
+      document.getElementById('gamePrice').textContent = `Print Price: $${data.price ? parseFloat(data.price).toFixed(2) : '10.99'}`;
+      document.getElementById('gameDesc').textContent = data.description || 'No description available.';
 
-      // Show container
-      loadingMsg.style.display = 'none';
-      gameDetail.style.display = 'flex';
+      const mainImgSrc = data.cartridge_image_url || data.image_url;
+      document.getElementById('cartridgeImg').src = mainImgSrc;
+
+      // Build Gallery Array for Lightbox
+      galleryImages = [mainImgSrc];
+
+      // Render Screenshots if available
+      const shotsGrid = document.getElementById('screenshotsGrid');
+      shotsGrid.innerHTML = '';
+
+      if (data.screenshots && Array.isArray(data.screenshots)) {
+        data.screenshots.forEach((shotUrl) => {
+          galleryImages.push(shotUrl);
+          const idx = galleryImages.length - 1;
+
+          const img = document.createElement('img');
+          img.src = shotUrl;
+          img.className = 'screenshot-thumb';
+          img.onclick = () => openLightbox(idx);
+          shotsGrid.appendChild(img);
+        });
+      }
     }
 
-    fetchGameDetail();
+    // 4. Lightbox Functions
+    function openLightbox(index) {
+      if (galleryImages.length === 0) return;
+      currentImageIndex = index;
+      document.getElementById('lightboxImg').src = galleryImages[currentImageIndex];
+      document.getElementById('lightbox').classList.add('active');
+    }
 
-    // 4. Modal Handling & Wishlist Submission
-    const modal = document.getElementById('wishlistModal');
-    const openModalBtn = document.getElementById('openWishlistModal');
-    const closeModalBtn = document.getElementById('closeWishlistModal');
-    const wishlistForm = document.getElementById('wishlistForm');
-    const modalMsg = document.getElementById('modalMsg');
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('active');
+    }
 
-    openModalBtn.addEventListener('click', () => {
-      modal.classList.add('active');
-      modalMsg.textContent = '';
-      modalMsg.className = '';
+    function navigateLightbox(direction) {
+      currentImageIndex += direction;
+      if (currentImageIndex < 0) {
+        currentImageIndex = galleryImages.length - 1;
+      } else if (currentImageIndex >= galleryImages.length) {
+        currentImageIndex = 0;
+      }
+      document.getElementById('lightboxImg').src = galleryImages[currentImageIndex];
+    }
+
+    // Close on backdrop click or ESC key
+    document.getElementById('lightbox').addEventListener('click', closeLightbox);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') navigateLightbox(-1);
+      if (e.key === 'ArrowRight') navigateLightbox(1);
     });
 
-    closeModalBtn.addEventListener('click', () => {
-      modal.classList.remove('active');
-    });
+    // 5. Wishlist Handler
+    async function toggleWishlist() {
+      const btn = document.getElementById('wishlistBtn');
+      btn.textContent = 'Added to Wishlist ✓';
+      btn.classList.add('added');
+    }
 
-    wishlistForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('modalEmail').value.trim().toLowerCase();
-      const pin = document.getElementById('modalPin').value.trim();
-
-      modalMsg.textContent = 'Verifying...';
-      modalMsg.className = '';
-
-      // Verify account credentials
-      const { data: user, error: fetchErr } = await supabaseClient
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .eq('pin', pin)
-        .single();
-
-      if (fetchErr || !user) {
-        modalMsg.textContent = 'Account not found or incorrect PIN.';
-        modalMsg.className = 'modal-error';
-        return;
-      }
-
-      // Calculate new wishlist value
-      let currentWishlist = user.wishlist ? user.wishlist.split(', ').filter(Boolean) : [];
-      if (!currentWishlist.includes(currentGameTitle)) {
-        currentWishlist.push(currentGameTitle);
-      }
-      const updatedWishlistStr = currentWishlist.join(', ');
-
-      // Update Supabase user record
-      const { error: updateErr } = await supabaseClient
-        .from('users')
-        .update({ wishlist: updatedWishlistStr })
-        .eq('id', user.id);
-
-      if (updateErr) {
-        modalMsg.textContent = 'Failed to update wishlist.';
-        modalMsg.className = 'modal-error';
-      } else {
-        modalMsg.textContent = `"${currentGameTitle}" added to your wishlist!`;
-        modalMsg.className = 'modal-success';
-        setTimeout(() => {
-          modal.classList.remove('active');
-          wishlistForm.reset();
-        }, 1800);
-      }
-    });
+    // Initial Load
+    loadGameDetail();
   </script>
 </body>
 </html>
