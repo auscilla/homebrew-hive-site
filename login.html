@@ -193,7 +193,7 @@
     }
 
     .switch-mode {
-      margin-top: 20px;
+      margin-top: 16px;
       font-size: 13px;
     }
 
@@ -202,6 +202,22 @@
       font-weight: 700;
       text-decoration: underline;
       cursor: pointer;
+    }
+
+    .forgot-pin-link {
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .forgot-pin-link a {
+      color: #555;
+      font-weight: 600;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .forgot-pin-link a:hover {
+      color: #111;
     }
 
     .error-msg {
@@ -371,7 +387,7 @@
       background: #e6b800;
     }
 
-    /* Add Game Modal / Drawer */
+    /* Modals (Reset PIN & Add Game) */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -507,6 +523,10 @@
     <div class="switch-mode" id="switchMode">
       Don't have an account? <a onclick="toggleMode()">Create Account</a>
     </div>
+
+    <div class="forgot-pin-link">
+      <a onclick="openResetModal()">Forgot PIN? Reset Here</a>
+    </div>
   </div>
 
   <!-- Account Dashboard -->
@@ -541,6 +561,31 @@
     </div>
 
     <button class="logout-btn" onclick="logout()">Log Out</button>
+  </div>
+
+  <!-- Reset PIN Modal -->
+  <div class="modal-overlay" id="resetModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="resetModalTitle">Reset PIN</h3>
+        <button class="modal-close" onclick="closeResetModal()">&times;</button>
+      </div>
+
+      <form id="resetPinForm" onsubmit="handlePinReset(event)">
+        <div class="form-group">
+          <label for="resetEmail">Email Address *</label>
+          <input type="email" id="resetEmail" required placeholder="your-email@example.com" />
+        </div>
+
+        <div class="form-group">
+          <label for="resetNewPin">New 4-Digit PIN *</label>
+          <input type="password" id="resetNewPin" maxlength="4" pattern="\d{4}" inputmode="numeric" required placeholder="4-digit PIN" />
+        </div>
+
+        <button type="submit" class="submit-btn">Update PIN</button>
+        <div id="resetStatus" class="request-status"></div>
+      </form>
+    </div>
   </div>
 
   <!-- Add Game Form Modal -->
@@ -653,7 +698,7 @@
       document.getElementById('errorMsg').textContent = '';
     }
 
-    // 4. Submit Handler (Auth)
+    // 4. Submit Handler (Auth Login/Signup)
     async function handleSubmit(e) {
       e.preventDefault();
       const email = document.getElementById('email').value.trim().toLowerCase();
@@ -729,7 +774,69 @@
       }
     }
 
-    // 6. Gamer Wishlist Functions
+    // 6. Reset PIN Logic
+    function openResetModal() {
+      const roleText = selectedRole === 'gamer' ? 'Gamer' : 'Game Dev';
+      document.getElementById('resetModalTitle').textContent = `Reset ${roleText} PIN`;
+      document.getElementById('resetModal').classList.add('active');
+      document.getElementById('resetStatus').textContent = '';
+      document.getElementById('resetPinForm').reset();
+    }
+
+    function closeResetModal() {
+      document.getElementById('resetModal').classList.remove('active');
+    }
+
+    async function handlePinReset(e) {
+      e.preventDefault();
+      const statusDiv = document.getElementById('resetStatus');
+      const email = document.getElementById('resetEmail').value.trim().toLowerCase();
+      const newPin = document.getElementById('resetNewPin').value.trim();
+
+      statusDiv.textContent = 'Checking account...';
+      statusDiv.style.color = '#333';
+
+      if (newPin.length !== 4 || !/^\d+$/.test(newPin)) {
+        statusDiv.textContent = 'PIN must be exactly 4 digits.';
+        statusDiv.style.color = '#d9534f';
+        return;
+      }
+
+      // Check if email & account_type exist in Supabase
+      const { data, error: fetchErr } = await supabaseClient
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('account_type', selectedRole)
+        .maybeSingle();
+
+      if (fetchErr || !data) {
+        statusDiv.textContent = 'Email address not found for this account type.';
+        statusDiv.style.color = '#d9534f';
+        return;
+      }
+
+      // Email exists -> Update PIN
+      const { error: updateErr } = await supabaseClient
+        .from('users')
+        .update({ pin: newPin })
+        .eq('id', data.id);
+
+      if (updateErr) {
+        console.error('Error updating PIN:', updateErr);
+        statusDiv.textContent = 'Failed to update PIN. Please try again.';
+        statusDiv.style.color = '#d9534f';
+      } else {
+        statusDiv.textContent = 'PIN updated successfully! You can now log in.';
+        statusDiv.style.color = '#2e7d32';
+
+        setTimeout(() => {
+          closeResetModal();
+        }, 1800);
+      }
+    }
+
+    // 7. Gamer Wishlist Functions
     function renderWishlist(wishlistStr) {
       const container = document.getElementById('dashWishlist');
       container.innerHTML = '';
@@ -768,7 +875,7 @@
       }
     }
 
-    // 7. Developer Submitted Games & Request Edit Flow
+    // 8. Developer Submitted Games & Request Edit Flow
     async function loadDeveloperGames(email) {
       const container = document.getElementById('devGamesList');
       
@@ -871,7 +978,7 @@
       }
     }
 
-    // 8. Add Game Modal Functions
+    // 9. Add Game Modal Functions
     function openAddGameModal() {
       document.getElementById('addGameModal').classList.add('active');
       document.getElementById('addGameStatus').textContent = '';
