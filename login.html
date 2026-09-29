@@ -114,7 +114,7 @@
 
     /* Auth Container Box */
     .auth-container {
-      max-width: 440px;
+      max-width: 520px;
       width: 92%;
       margin: 80px auto 40px;
       background: #ffffff;
@@ -164,13 +164,14 @@
       margin-bottom: 6px;
     }
 
-    .form-group input {
+    .form-group input, .form-group select, .form-group textarea {
       width: 100%;
       padding: 10px 12px;
       border: 2px solid #111;
       border-radius: 4px;
       font-size: 14px;
       outline: none;
+      font-family: inherit;
     }
 
     .submit-btn {
@@ -220,7 +221,6 @@
       font-size: 1.5rem;
       overflow-wrap: break-word;
       word-break: break-word;
-      hyphens: auto;
       line-height: 1.25;
     }
 
@@ -246,7 +246,7 @@
       color: #333;
     }
 
-    /* Wishlist Tag List */
+    /* Wishlist Tags */
     .wishlist-tags {
       display: flex;
       flex-wrap: wrap;
@@ -274,13 +274,55 @@
       cursor: pointer;
       line-height: 1;
       padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
-    .wishlist-tag button:hover {
-      color: #ff3333;
+    /* Developer Game List & Dropdown Form */
+    .dev-game-item {
+      background: #ffffff;
+      border: 1.5px solid #111;
+      border-radius: 6px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .dev-game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dev-game-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .more-info-btn {
+      background: #111;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .edit-dropdown {
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #eee;
+    }
+
+    .edit-dropdown.open {
+      display: block;
+    }
+
+    .request-status {
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
     }
 
     .empty-msg {
@@ -298,22 +340,16 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 14px;
+      margin-top: 10px;
     }
 
-    /* Mobile Layout Adjustments */
     @media (max-width: 480px) {
       .auth-container {
         padding: 24px 16px;
         margin-top: 70px;
       }
-
       .dashboard h2 {
         font-size: 1.25rem;
-      }
-
-      .menu-btn {
-        left: 20px;
-        top: 20px;
       }
     }
   </style>
@@ -378,14 +414,27 @@
     <h2 id="dashEmail">Welcome!</h2>
     <p class="sub-text" id="dashRole">Account Type: Gamer</p>
 
-    <div class="info-card">
-      <h3>Wishlist</h3>
-      <div id="dashWishlist" class="wishlist-tags"></div>
+    <!-- Gamer View: Wishlist & Past Purchases -->
+    <div id="gamerSection">
+      <div class="info-card">
+        <h3>Wishlist</h3>
+        <div id="dashWishlist" class="wishlist-tags"></div>
+      </div>
+
+      <div class="info-card">
+        <h3>Past Purchases</h3>
+        <p id="dashPurchases" class="empty-msg">No past transactions found.</p>
+      </div>
     </div>
 
-    <div class="info-card">
-      <h3>Past Purchases</h3>
-      <p id="dashPurchases" class="empty-msg">No past transactions found.</p>
+    <!-- Game Developer View: Submitted Games List -->
+    <div id="devSection" style="display: none;">
+      <div class="info-card">
+        <h3>Your Submitted Games</h3>
+        <div id="devGamesList">
+          <p class="empty-msg">Loading submitted games...</p>
+        </div>
+      </div>
     </div>
 
     <button class="logout-btn" onclick="logout()">Log Out</button>
@@ -459,7 +508,6 @@
       }
 
       if (isSignUp) {
-        // Create Account
         const { data, error } = await supabaseClient
           .from('users')
           .insert([
@@ -482,7 +530,6 @@
         showDashboard(currentUser);
 
       } else {
-        // Login Check
         const { data, error } = await supabaseClient
           .from('users')
           .select('*')
@@ -501,22 +548,31 @@
       }
     }
 
-    // 5. Dashboard & Interactive Wishlist Rendering
+    // 5. Dashboard Routing
     function showDashboard(user) {
       document.getElementById('authBox').style.display = 'none';
       document.getElementById('dashboardBox').style.display = 'block';
 
       document.getElementById('dashEmail').textContent = `Welcome, ${user.email}!`;
-      document.getElementById('dashRole').textContent = `Account Type: ${user.account_type === 'gamer' ? 'Gamer' : 'Game Developer'}`;
 
-      renderWishlist(user.wishlist);
-      document.getElementById('dashPurchases').textContent = user.purchases || 'No past transactions found.';
+      if (user.account_type === 'dev') {
+        document.getElementById('dashRole').textContent = 'Account Type: Game Developer';
+        document.getElementById('gamerSection').style.display = 'none';
+        document.getElementById('devSection').style.display = 'block';
+        loadDeveloperGames(user.email);
+      } else {
+        document.getElementById('dashRole').textContent = 'Account Type: Gamer';
+        document.getElementById('devSection').style.display = 'none';
+        document.getElementById('gamerSection').style.display = 'block';
+        renderWishlist(user.wishlist);
+        document.getElementById('dashPurchases').textContent = user.purchases || 'No past transactions found.';
+      }
     }
 
+    // 6. Gamer Wishlist Functions
     function renderWishlist(wishlistStr) {
       const container = document.getElementById('dashWishlist');
       container.innerHTML = '';
-
       const items = wishlistStr ? wishlistStr.split(', ').filter(Boolean) : [];
 
       if (items.length === 0) {
@@ -535,28 +591,116 @@
       });
     }
 
-    // 6. Remove Item from Wishlist & Update Supabase
     async function removeFromWishlist(itemToRemove) {
       if (!currentUser) return;
-
       let items = currentUser.wishlist ? currentUser.wishlist.split(', ').filter(Boolean) : [];
       items = items.filter(i => i !== itemToRemove);
-
       const newWishlistStr = items.join(', ');
 
-      // Update Supabase
       const { error } = await supabaseClient
         .from('users')
         .update({ wishlist: newWishlistStr })
         .eq('id', currentUser.id);
 
-      if (error) {
-        console.error('Error removing item from wishlist:', error);
-        alert('Failed to update wishlist. Please try again.');
-
-      } else {
+      if (!error) {
         currentUser.wishlist = newWishlistStr;
         renderWishlist(newWishlistStr);
+      }
+    }
+
+    // 7. Developer Submitted Games & Request Edit Flow
+    async function loadDeveloperGames(email) {
+      const container = document.getElementById('devGamesList');
+      
+      const { data, error } = await supabaseClient
+        .from('games')
+        .select('*')
+        .eq('developer_email', email);
+
+      if (error) {
+        console.error('Error fetching dev games:', error);
+        container.innerHTML = '<p class="empty-msg">Error loading your games catalog.</p>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p class="empty-msg">No games currently associated with this developer account.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      data.forEach((game, index) => {
+        const item = document.createElement('div');
+        item.className = 'dev-game-item';
+        item.innerHTML = `
+          <div class="dev-game-header">
+            <span class="dev-game-title">${game.title}</span>
+            <button class="more-info-btn" onclick="toggleEditDropdown(${index})">More Info / Edit</button>
+          </div>
+          
+          <div class="edit-dropdown" id="dropdown-${index}">
+            <form onsubmit="submitEditRequest(event, '${game.title.replace(/'/g, "\\'")}', ${index})">
+              <div class="form-group">
+                <label>Field to Request Edit</label>
+                <select id="editField-${index}" required>
+                  <option value="Game Name / Title">Game Name / Title</option>
+                  <option value="Print Price">Print Price</option>
+                  <option value="Description">Description</option>
+                  <option value="Cartridge Cover Image">Cartridge Cover Image</option>
+                  <option value="Screenshots">Screenshots</option>
+                  <option value="Video Preview">Video Preview</option>
+                  <option value="Other">Other Request</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Requested Details / New Information</label>
+                <textarea id="editDetails-${index}" required placeholder="Describe the change or paste new image/video URLs here..."></textarea>
+              </div>
+
+              <button type="submit" class="submit-btn" style="padding: 8px; font-size: 13px;">Submit Edit Request</button>
+              <div id="status-${index}" class="request-status"></div>
+            </form>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function toggleEditDropdown(index) {
+      const dropdown = document.getElementById(`dropdown-${index}`);
+      dropdown.classList.toggle('open');
+    }
+
+    async function submitEditRequest(e, gameTitle, index) {
+      e.preventDefault();
+      const statusDiv = document.getElementById(`status-${index}`);
+      const field = document.getElementById(`editField-${index}`).value;
+      const details = document.getElementById(`editDetails-${index}`).value.trim();
+
+      statusDiv.textContent = 'Submitting request...';
+      statusDiv.style.color = '#333';
+
+      const { error } = await supabaseClient
+        .from('edit_requests')
+        .insert([
+          {
+            developer_email: currentUser.email,
+            game_title: gameTitle,
+            field_to_edit: field,
+            request_details: details,
+            status: 'Pending'
+          }
+        ]);
+
+      if (error) {
+        console.error('Edit request error:', error);
+        statusDiv.textContent = 'Failed to send request. Please try again.';
+        statusDiv.style.color = '#d9534f';
+      } else {
+        statusDiv.textContent = 'Edit request sent successfully!';
+        statusDiv.style.color = '#2e7d32';
+        document.getElementById(`editDetails-${index}`).value = '';
       }
     }
 
