@@ -325,14 +325,14 @@
           {
             name: name,
             email: email,
-            is_developer: isDeveloper,
-            message: comment
+            comment: comment,
+            is_developer: isDeveloper
           }
         ]);
 
       if (error) {
         console.error('Error submitting contact form:', error);
-        statusMsg.textContent = 'Failed to send message. Please try again.';
+        statusMsg.textContent = 'Failed to send message. Make sure is_developer column is added to Supabase.';
         statusMsg.style.color = '#d9534f';
         submitBtn.disabled = false;
       } else {
