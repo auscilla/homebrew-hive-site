@@ -207,12 +207,12 @@
       object-fit: cover;
       border: 2px solid #111;
       border-radius: 4px;
-      cursor: pointer;
+      cursor: pointer !important;
       transition: transform 0.2s ease, opacity 0.2s ease;
     }
 
     .screenshot-thumb:hover {
-      transform: scale(1.05);
+      transform: scale(1.06);
       opacity: 0.9;
     }
 
@@ -239,7 +239,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.88);
       z-index: 200;
       display: none;
       align-items: center;
@@ -264,7 +264,7 @@
       max-height: 80vh;
       object-fit: contain;
       border-radius: 6px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
     }
 
     /* Lightbox Controls */
@@ -290,7 +290,7 @@
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      background: rgba(17, 17, 17, 0.7);
+      background: rgba(17, 17, 17, 0.8);
       color: #fff;
       border: 2px solid #ffffff;
       border-radius: 50%;
@@ -375,7 +375,7 @@
 
         <button id="wishlistBtn" class="action-btn" onclick="toggleWishlist()">+ Add to Wishlist</button>
 
-        <!-- Screenshots -->
+        <!-- Screenshots Grid -->
         <div id="screenshotsGrid" class="screenshots-grid"></div>
       </div>
 
@@ -387,13 +387,13 @@
   <!-- Lightbox Modal -->
   <div class="lightbox-modal" id="lightbox">
     <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-    <button class="lightbox-arrow left" onclick="navigateLightbox(-1)">&#8249;</button>
+    <button class="lightbox-arrow left" onclick="navigateLightbox(-1, event)">&#8249;</button>
     
     <div class="lightbox-content" onclick="event.stopPropagation()">
       <img id="lightboxImg" class="lightbox-img" src="" alt="Enlarged View" />
     </div>
 
-    <button class="lightbox-arrow right" onclick="navigateLightbox(1)">&#8250;</button>
+    <button class="lightbox-arrow right" onclick="navigateLightbox(1, event)">&#8250;</button>
   </div>
 
   <script>
@@ -422,11 +422,10 @@
     const SUPABASE_KEY = 'sb_publishable_I27CpcilWluOjUSSb6y_pQ_t9ylEjmB';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let currentGame = null;
     let galleryImages = [];
     let currentImageIndex = 0;
 
-    // 3. Fetch Game Data
+    // 3. Fetch Game Details & Initialize Lightbox Array
     async function loadGameDetail() {
       const urlParams = new URLSearchParams(window.location.search);
       const gameId = urlParams.get('id');
@@ -448,9 +447,7 @@
         return;
       }
 
-      currentGame = data;
-
-      // Populate Text & Details
+      // Populate Text
       document.getElementById('gameTitle').textContent = data.title;
       document.getElementById('gamePrice').textContent = `Print Price: $${data.price ? parseFloat(data.price).toFixed(2) : '10.99'}`;
       document.getElementById('gameDesc').textContent = data.description || 'No description available.';
@@ -458,28 +455,47 @@
       const mainImgSrc = data.cartridge_image_url || data.image_url;
       document.getElementById('cartridgeImg').src = mainImgSrc;
 
-      // Build Gallery Array for Lightbox
+      // Start Gallery with Main Cartridge Image
       galleryImages = [mainImgSrc];
 
-      // Render Screenshots if available
       const shotsGrid = document.getElementById('screenshotsGrid');
-      shotsGrid.innerHTML = '';
 
-      if (data.screenshots && Array.isArray(data.screenshots)) {
-        data.screenshots.forEach((shotUrl) => {
-          galleryImages.push(shotUrl);
-          const idx = galleryImages.length - 1;
+      // Parse screenshots (Supports Array, JSON string, or Comma-separated string)
+      let shotsList = [];
+      if (Array.isArray(data.screenshots)) {
+        shotsList = data.screenshots;
+      } else if (typeof data.screenshots === 'string' && data.screenshots.trim().length > 0) {
+        try {
+          shotsList = JSON.parse(data.screenshots);
+        } catch (e) {
+          shotsList = data.screenshots.split(',').map(s => s.trim()).filter(Boolean);
+        }
+      }
 
-          const img = document.createElement('img');
-          img.src = shotUrl;
-          img.className = 'screenshot-thumb';
-          img.onclick = () => openLightbox(idx);
-          shotsGrid.appendChild(img);
+      // If no screenshots found in DB, collect existing DOM images from page as fallback
+      if (shotsList.length === 0) {
+        const existingImgs = shotsGrid.querySelectorAll('img');
+        existingImgs.forEach(img => {
+          if (img.src) shotsList.push(img.src);
         });
       }
+
+      // Render Thumbnails with explicit Click Handlers
+      shotsGrid.innerHTML = '';
+      shotsList.forEach((shotUrl) => {
+        galleryImages.push(shotUrl);
+        const imgIndex = galleryImages.length - 1;
+
+        const img = document.createElement('img');
+        img.src = shotUrl;
+        img.className = 'screenshot-thumb';
+        img.alt = 'Screenshot';
+        img.onclick = () => openLightbox(imgIndex);
+        shotsGrid.appendChild(img);
+      });
     }
 
-    // 4. Lightbox Functions
+    // 4. Lightbox Core Functions
     function openLightbox(index) {
       if (galleryImages.length === 0) return;
       currentImageIndex = index;
@@ -491,7 +507,8 @@
       document.getElementById('lightbox').classList.remove('active');
     }
 
-    function navigateLightbox(direction) {
+    function navigateLightbox(direction, event) {
+      if (event) event.stopPropagation();
       currentImageIndex += direction;
       if (currentImageIndex < 0) {
         currentImageIndex = galleryImages.length - 1;
@@ -501,22 +518,25 @@
       document.getElementById('lightboxImg').src = galleryImages[currentImageIndex];
     }
 
-    // Close on backdrop click or ESC key
+    // Close on Backdrop Click or ESC / Arrow keys
     document.getElementById('lightbox').addEventListener('click', closeLightbox);
     document.addEventListener('keydown', (e) => {
+      const lightbox = document.getElementById('lightbox');
+      if (!lightbox.classList.contains('active')) return;
+
       if (e.key === 'Escape') closeLightbox();
       if (e.key === 'ArrowLeft') navigateLightbox(-1);
       if (e.key === 'ArrowRight') navigateLightbox(1);
     });
 
-    // 5. Wishlist Handler
+    // 5. Wishlist Placeholder Handler
     async function toggleWishlist() {
       const btn = document.getElementById('wishlistBtn');
       btn.textContent = 'Added to Wishlist ✓';
       btn.classList.add('added');
     }
 
-    // Initial Load
+    // Initial Execution
     loadGameDetail();
   </script>
 </body>
