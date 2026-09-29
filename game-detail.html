@@ -196,14 +196,14 @@
     /* Screenshots Grid */
     .screenshots-grid {
       display: flex;
-      gap: 12px;
+      gap: 14px;
       margin-top: 10px;
       flex-wrap: wrap;
     }
 
     .screenshot-thumb {
-      width: 90px;
-      height: 70px;
+      width: 140px;
+      height: 105px;
       object-fit: cover;
       border: 2px solid #111;
       border-radius: 4px;
@@ -212,7 +212,7 @@
     }
 
     .screenshot-thumb:hover {
-      transform: scale(1.06);
+      transform: scale(1.05);
       opacity: 0.9;
     }
 
@@ -324,6 +324,10 @@
       .detail-grid {
         grid-template-columns: 1fr;
         gap: 30px;
+      }
+      .screenshot-thumb {
+        width: 100px;
+        height: 75px;
       }
       .lightbox-arrow {
         width: 40px;
