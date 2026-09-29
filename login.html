@@ -114,7 +114,7 @@
 
     /* Auth Container Box */
     .auth-container {
-      max-width: 520px;
+      max-width: 540px;
       width: 92%;
       margin: 80px auto 40px;
       background: #ffffff;
@@ -240,10 +240,13 @@
 
     .info-card h3 {
       font-size: 13px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     /* Wishlist Tags */
@@ -276,7 +279,7 @@
       padding: 0;
     }
 
-    /* Developer Game List & Dropdown Form */
+    /* Developer Game List & Status Badges */
     .dev-game-item {
       background: #ffffff;
       border: 1.5px solid #111;
@@ -294,6 +297,28 @@
     .dev-game-title {
       font-size: 15px;
       font-weight: 700;
+    }
+
+    .status-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      display: inline-block;
+      margin-left: 8px;
+    }
+
+    .status-badge.approved {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #a5d6a7;
+    }
+
+    .status-badge.pending {
+      background: #fff8e1;
+      color: #f57f17;
+      border: 1px solid #ffe082;
     }
 
     .more-info-btn {
@@ -323,6 +348,81 @@
       font-size: 12px;
       font-weight: 600;
       margin-top: 8px;
+    }
+
+    .add-game-btn {
+      display: inline-block;
+      width: 100%;
+      padding: 12px;
+      background: #ffcc00;
+      color: #111;
+      border: 2px solid #111;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 14px;
+      text-transform: uppercase;
+      cursor: pointer;
+      margin-top: 8px;
+      text-align: center;
+      transition: background 0.2s ease;
+    }
+
+    .add-game-btn:hover {
+      background: #e6b800;
+    }
+
+    /* Add Game Modal / Drawer */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      border: 2px solid #111;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      position: relative;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #111;
+      padding-bottom: 12px;
+    }
+
+    .modal-header h3 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      font-weight: 700;
+      cursor: pointer;
     }
 
     .empty-msg {
@@ -435,9 +535,69 @@
           <p class="empty-msg">Loading submitted games...</p>
         </div>
       </div>
+
+      <!-- Add Game Action Button -->
+      <button class="add-game-btn" onclick="openAddGameModal()">+ Add New Game</button>
     </div>
 
     <button class="logout-btn" onclick="logout()">Log Out</button>
+  </div>
+
+  <!-- Add Game Form Modal -->
+  <div class="modal-overlay" id="addGameModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Submit New Game</h3>
+        <button class="modal-close" onclick="closeAddGameModal()">&times;</button>
+      </div>
+
+      <form id="addGameForm" onsubmit="handleGameSubmission(event)">
+        <div class="form-group">
+          <label for="newGameTitle">Game Title *</label>
+          <input type="text" id="newGameTitle" required placeholder="e.g. Starbound Odyssey" />
+        </div>
+
+        <div class="form-group">
+          <label for="newGameCategory">Category *</label>
+          <select id="newGameCategory" required>
+            <option value="indie">Indie</option>
+            <option value="Adventure">Adventure</option>
+            <option value="Action">Action</option>
+            <option value="Classic">Classic</option>
+            <option value="RPG">RPG</option>
+            <option value="Puzzle">Puzzle</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="newGamePrice">Suggested Print Price ($) *</label>
+          <input type="number" step="0.01" id="newGamePrice" required placeholder="10.99" />
+        </div>
+
+        <div class="form-group">
+          <label for="newGameDesc">Game Description *</label>
+          <textarea id="newGameDesc" required rows="3" placeholder="Brief summary of your retro game..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="newGameCartImg">Cartridge Image File Name or URL *</label>
+          <input type="text" id="newGameCartImg" required placeholder="e.g. cart-starbound.png" />
+        </div>
+
+        <div class="form-group">
+          <label for="newGameVideo">Video Preview URL (YouTube or MP4)</label>
+          <input type="text" id="newGameVideo" placeholder="https://youtube.com/watch?v=..." />
+        </div>
+
+        <div class="form-group">
+          <label for="newGameRom">ROM Download / Supabase Storage URL *</label>
+          <input type="text" id="newGameRom" required placeholder="https://..." />
+        </div>
+
+        <button type="submit" class="submit-btn" id="addGameSubmitBtn">Submit Game for Review</button>
+        <div id="addGameStatus" class="request-status"></div>
+      </form>
+    </div>
   </div>
 
   <script>
@@ -493,7 +653,7 @@
       document.getElementById('errorMsg').textContent = '';
     }
 
-    // 4. Submit Handler
+    // 4. Submit Handler (Auth)
     async function handleSubmit(e) {
       e.preventDefault();
       const email = document.getElementById('email').value.trim().toLowerCase();
@@ -630,11 +790,18 @@
 
       container.innerHTML = '';
       data.forEach((game, index) => {
+        const isApproved = (game.status || 'Approved').toLowerCase() === 'approved';
+        const badgeClass = isApproved ? 'approved' : 'pending';
+        const badgeLabel = isApproved ? '🟢 Approved' : '🟡 Pending Review';
+
         const item = document.createElement('div');
         item.className = 'dev-game-item';
         item.innerHTML = `
           <div class="dev-game-header">
-            <span class="dev-game-title">${game.title}</span>
+            <div>
+              <span class="dev-game-title">${game.title}</span>
+              <span class="status-badge ${badgeClass}">${badgeLabel}</span>
+            </div>
             <button class="more-info-btn" onclick="toggleEditDropdown(${index})">More Info / Edit</button>
           </div>
           
@@ -701,6 +868,63 @@
         statusDiv.textContent = 'Edit request sent successfully!';
         statusDiv.style.color = '#2e7d32';
         document.getElementById(`editDetails-${index}`).value = '';
+      }
+    }
+
+    // 8. Add Game Modal Functions
+    function openAddGameModal() {
+      document.getElementById('addGameModal').classList.add('active');
+      document.getElementById('addGameStatus').textContent = '';
+    }
+
+    function closeAddGameModal() {
+      document.getElementById('addGameModal').classList.remove('active');
+      document.getElementById('addGameForm').reset();
+    }
+
+    async function handleGameSubmission(e) {
+      e.preventDefault();
+      const statusDiv = document.getElementById('addGameStatus');
+      statusDiv.textContent = 'Submitting game...';
+      statusDiv.style.color = '#333';
+
+      const title = document.getElementById('newGameTitle').value.trim();
+      const category = document.getElementById('newGameCategory').value;
+      const price = parseFloat(document.getElementById('newGamePrice').value);
+      const desc = document.getElementById('newGameDesc').value.trim();
+      const cartImg = document.getElementById('newGameCartImg').value.trim();
+      const video = document.getElementById('newGameVideo').value.trim();
+      const rom = document.getElementById('newGameRom').value.trim();
+
+      const { data, error } = await supabaseClient
+        .from('games')
+        .insert([
+          {
+            title: title,
+            category: category,
+            price: price,
+            description: desc,
+            cartridge_image_url: cartImg,
+            image_url: cartImg,
+            video_url: video,
+            rom_url: rom,
+            developer_email: currentUser.email,
+            status: 'Pending'
+          }
+        ]);
+
+      if (error) {
+        console.error('Error adding new game:', error);
+        statusDiv.textContent = 'Failed to submit game. Please check your entries.';
+        statusDiv.style.color = '#d9534f';
+      } else {
+        statusDiv.textContent = 'Game submitted successfully! Placed in Pending Review.';
+        statusDiv.style.color = '#2e7d32';
+
+        setTimeout(() => {
+          closeAddGameModal();
+          loadDeveloperGames(currentUser.email);
+        }, 1200);
       }
     }
 
