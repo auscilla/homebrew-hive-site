@@ -370,7 +370,7 @@
       <!-- Info Details -->
       <div class="info-box">
         <h1 id="gameTitle" class="game-title">Loading...</h1>
-        <div id="gamePrice" class="price-tag">Print Price: $--.--</div>
+        <div id="gamePrice" class="price-tag">PRINT PRICE: $10.99</div>
         <p id="gameDesc" class="description"></p>
 
         <button id="wishlistBtn" class="action-btn" onclick="toggleWishlist()">+ Add to Wishlist</button>
@@ -425,7 +425,7 @@
     let galleryImages = [];
     let currentImageIndex = 0;
 
-    // 3. Fetch Game Details & Initialize Lightbox Array
+    // 3. Load Game Data & Lightbox Grid
     async function loadGameDetail() {
       const urlParams = new URLSearchParams(window.location.search);
       const gameId = urlParams.get('id');
@@ -447,21 +447,28 @@
         return;
       }
 
-      // Populate Text
+      // Populate Text & Price
       document.getElementById('gameTitle').textContent = data.title;
-      document.getElementById('gamePrice').textContent = `Print Price: $${data.price ? parseFloat(data.price).toFixed(2) : '10.99'}`;
+      
+      let priceVal = "10.99";
+      if (data.price !== undefined && data.price !== null && !isNaN(parseFloat(data.price))) {
+        priceVal = parseFloat(data.price).toFixed(2);
+      }
+      document.getElementById('gamePrice').textContent = `PRINT PRICE: $${priceVal}`;
       document.getElementById('gameDesc').textContent = data.description || 'No description available.';
 
       const mainImgSrc = data.cartridge_image_url || data.image_url;
       document.getElementById('cartridgeImg').src = mainImgSrc;
 
-      // Start Gallery with Main Cartridge Image
+      // Reset gallery
       galleryImages = [mainImgSrc];
 
       const shotsGrid = document.getElementById('screenshotsGrid');
+      shotsGrid.innerHTML = '';
 
-      // Parse screenshots (Supports Array, JSON string, or Comma-separated string)
+      // Check for screenshots in data or build defaults
       let shotsList = [];
+
       if (Array.isArray(data.screenshots)) {
         shotsList = data.screenshots;
       } else if (typeof data.screenshots === 'string' && data.screenshots.trim().length > 0) {
@@ -472,16 +479,12 @@
         }
       }
 
-      // If no screenshots found in DB, collect existing DOM images from page as fallback
+      // Default fallback screenshots if none stored in DB
       if (shotsList.length === 0) {
-        const existingImgs = shotsGrid.querySelectorAll('img');
-        existingImgs.forEach(img => {
-          if (img.src) shotsList.push(img.src);
-        });
+        shotsList = ['shot1.png', 'shot2.png', 'shot3.png', 'shot4.png'];
       }
 
-      // Render Thumbnails with explicit Click Handlers
-      shotsGrid.innerHTML = '';
+      // Render thumbnails and add to gallery
       shotsList.forEach((shotUrl) => {
         galleryImages.push(shotUrl);
         const imgIndex = galleryImages.length - 1;
@@ -495,7 +498,7 @@
       });
     }
 
-    // 4. Lightbox Core Functions
+    // 4. Lightbox Controls
     function openLightbox(index) {
       if (galleryImages.length === 0) return;
       currentImageIndex = index;
@@ -518,7 +521,6 @@
       document.getElementById('lightboxImg').src = galleryImages[currentImageIndex];
     }
 
-    // Close on Backdrop Click or ESC / Arrow keys
     document.getElementById('lightbox').addEventListener('click', closeLightbox);
     document.addEventListener('keydown', (e) => {
       const lightbox = document.getElementById('lightbox');
@@ -529,14 +531,13 @@
       if (e.key === 'ArrowRight') navigateLightbox(1);
     });
 
-    // 5. Wishlist Placeholder Handler
+    // 5. Wishlist Placeholder
     async function toggleWishlist() {
       const btn = document.getElementById('wishlistBtn');
       btn.textContent = 'Added to Wishlist ✓';
       btn.classList.add('added');
     }
 
-    // Initial Execution
     loadGameDetail();
   </script>
 </body>
