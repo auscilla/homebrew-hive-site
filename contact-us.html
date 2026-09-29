@@ -114,7 +114,7 @@
 
     /* Contact Card Box */
     .contact-container {
-      max-width: 500px;
+      max-width: 520px;
       width: 92%;
       margin: 80px auto 40px;
       background: #ffffff;
@@ -183,6 +183,17 @@
       color: #222;
       cursor: pointer;
       user-select: none;
+    }
+
+    .rules-link {
+      color: #555;
+      font-weight: 700;
+      text-decoration: underline;
+      margin-left: 4px;
+    }
+
+    .rules-link:hover {
+      color: #111;
     }
 
     .submit-btn {
@@ -262,10 +273,13 @@
         <input type="email" id="contactEmail" required placeholder="your.email@example.com" />
       </div>
 
-      <!-- Developer Checkbox -->
+      <!-- Developer Checkbox with (read rules) link -->
       <div class="checkbox-group">
         <input type="checkbox" id="isDeveloper" />
-        <label for="isDeveloper">I am a game developer & would like to list my game</label>
+        <label for="isDeveloper">
+          I am a game developer & would like to list my game 
+          <a href="rules.html" target="_blank" class="rules-link">(read rules)</a>
+        </label>
       </div>
 
       <div class="form-group">
@@ -332,7 +346,7 @@
 
       if (error) {
         console.error('Error submitting contact form:', error);
-        statusMsg.textContent = 'Failed to send message. Make sure is_developer column is added to Supabase.';
+        statusMsg.textContent = 'Failed to send message. Please try again.';
         statusMsg.style.color = '#d9534f';
         submitBtn.disabled = false;
       } else {
