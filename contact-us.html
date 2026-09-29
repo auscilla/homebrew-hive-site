@@ -112,75 +112,92 @@
       pointer-events: auto;
     }
 
-    /* Container Box */
+    /* Contact Card Box */
     .contact-container {
-      max-width: 540px;
-      width: 90%;
-      margin: 100px auto 60px;
+      max-width: 500px;
+      width: 92%;
+      margin: 80px auto 40px;
       background: #ffffff;
-      padding: 36px;
+      padding: 32px 28px;
       border: 2px solid #111;
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
-    .page-title {
-      font-size: 2rem;
+    .contact-title {
+      font-size: 1.8rem;
       font-weight: 800;
-      text-transform: uppercase;
-      text-align: center;
       margin-bottom: 8px;
+      text-transform: uppercase;
     }
 
-    .page-subtitle {
-      text-align: center;
+    .contact-sub {
+      font-size: 14px;
       color: #555;
-      font-size: 0.95rem;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
 
     .form-group {
-      margin-bottom: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      margin-bottom: 18px;
+      text-align: left;
     }
 
     .form-group label {
+      display: block;
       font-size: 13px;
       font-weight: 700;
+      margin-bottom: 6px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
-    .form-group input,
-    .form-group textarea {
+    .form-group input, .form-group textarea {
       width: 100%;
-      padding: 12px;
+      padding: 11px 12px;
       border: 2px solid #111;
       border-radius: 4px;
-      font-size: 15px;
-      font-family: inherit;
+      font-size: 14px;
       outline: none;
+      font-family: inherit;
     }
 
-    .form-group textarea {
-      resize: vertical;
-      min-height: 120px;
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #111;
+      cursor: pointer;
+    }
+
+    .checkbox-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #222;
+      cursor: pointer;
+      user-select: none;
     }
 
     .submit-btn {
       width: 100%;
-      padding: 14px;
+      padding: 12px;
       background: #111;
       color: #fff;
       border: none;
-      border-radius: 4px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1px;
       cursor: pointer;
+      border-radius: 4px;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
       transition: background 0.2s ease;
     }
 
@@ -189,18 +206,19 @@
     }
 
     .status-msg {
-      text-align: center;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      margin-top: 16px;
+      margin-top: 12px;
     }
 
-    .status-msg.success {
-      color: #2e7d32;
-    }
-
-    .status-msg.error {
-      color: #d9534f;
+    @media (max-width: 480px) {
+      .contact-container {
+        padding: 24px 16px;
+        margin-top: 70px;
+      }
+      .contact-title {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
@@ -228,25 +246,31 @@
 
   <div class="backdrop" id="backdrop"></div>
 
-  <!-- Contact Form Box -->
+  <!-- Contact Form Card -->
   <div class="contact-container">
-    <h1 class="page-title">Contact Us</h1>
-    <p class="page-subtitle">Have questions or feedback? Drop us a message below.</p>
+    <h1 class="contact-title">Contact Us</h1>
+    <p class="contact-sub">Have questions or feedback? Drop us a message below.</p>
 
     <form id="contactForm" onsubmit="handleContactSubmit(event)">
       <div class="form-group">
-        <label for="name">Name</label>
-        <input type="text" id="name" required placeholder="Your Name" />
+        <label for="contactName">Name</label>
+        <input type="text" id="contactName" required placeholder="Your Name" />
       </div>
 
       <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" required placeholder="your.email@example.com" />
+        <label for="contactEmail">Email Address</label>
+        <input type="email" id="contactEmail" required placeholder="your.email@example.com" />
+      </div>
+
+      <!-- Developer Checkbox -->
+      <div class="checkbox-group">
+        <input type="checkbox" id="isDeveloper" />
+        <label for="isDeveloper">I am a game developer & would like to list my game</label>
       </div>
 
       <div class="form-group">
-        <label for="comment">Comment</label>
-        <textarea id="comment" required placeholder="Type your comment or message here..."></textarea>
+        <label for="contactComment">Comment</label>
+        <textarea id="contactComment" required rows="4" placeholder="Type your comment or message here..."></textarea>
       </div>
 
       <button type="submit" class="submit-btn" id="submitBtn">Send Message</button>
@@ -287,31 +311,33 @@
       const submitBtn = document.getElementById('submitBtn');
 
       statusMsg.textContent = 'Sending message...';
-      statusMsg.className = 'status-msg';
+      statusMsg.style.color = '#333';
       submitBtn.disabled = true;
 
-      const name = document.getElementById('name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const comment = document.getElementById('comment').value.trim();
+      const name = document.getElementById('contactName').value.trim();
+      const email = document.getElementById('contactEmail').value.trim().toLowerCase();
+      const isDeveloper = document.getElementById('isDeveloper').checked;
+      const comment = document.getElementById('contactComment').value.trim();
 
-      const { data, error } = await supabaseClient
+      const { error } = await supabaseClient
         .from('contact_messages')
         .insert([
           {
             name: name,
             email: email,
-            comment: comment
+            is_developer: isDeveloper,
+            message: comment
           }
         ]);
 
       if (error) {
-        console.error('Contact submit error:', error);
+        console.error('Error submitting contact form:', error);
         statusMsg.textContent = 'Failed to send message. Please try again.';
-        statusMsg.className = 'status-msg error';
+        statusMsg.style.color = '#d9534f';
         submitBtn.disabled = false;
       } else {
-        statusMsg.textContent = 'Thank you! Your comment has been sent.';
-        statusMsg.className = 'status-msg success';
+        statusMsg.textContent = 'Thank you! Your message has been sent.';
+        statusMsg.style.color = '#2e7d32';
         document.getElementById('contactForm').reset();
         submitBtn.disabled = false;
       }
