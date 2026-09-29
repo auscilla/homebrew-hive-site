@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Guidelines & Rules - Homebrew Hive</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f7f7f7;
+      color: #111;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Top Left Menu Trigger */
+    .menu-btn {
+      position: absolute;
+      top: 24px;
+      left: 32px;
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      color: #333;
+      cursor: pointer;
+      z-index: 10;
+      padding: 8px 0;
+    }
+
+    /* Slide-out Overlay Drawer */
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 320px;
+      height: 100%;
+      background-color: #111111;
+      color: #ffffff;
+      z-index: 100;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+    }
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .nav-links a {
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 28px;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-family: 'Impact', 'Arial Black', sans-serif;
+    }
+
+    .backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.2);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Content Box Container */
+    .rules-container {
+      max-width: 900px;
+      width: 92%;
+      margin: 80px auto 60px;
+      background: #ffffff;
+      border: 2px solid #111111;
+      border-radius: 8px;
+      padding: 36px 32px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .rules-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      border-bottom: 2px solid #111111;
+      padding-bottom: 12px;
+    }
+
+    /* Yellow Highlight Banner (Matching Request Us Page) */
+    .banner-box {
+      background-color: #ffcc00;
+      border: 1.5px solid #111111;
+      border-radius: 6px;
+      padding: 18px 20px;
+      margin-top: 20px;
+      margin-bottom: 32px;
+    }
+
+    .banner-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .banner-desc {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #111;
+      font-weight: 500;
+    }
+
+    /* Rules 2-Column Grid */
+    .rules-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px 28px;
+    }
+
+    .rule-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .rule-item h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #111;
+    }
+
+    .rule-item p {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #444;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 36px;
+      color: #111;
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .rules-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+      .rules-container {
+        padding: 24px 20px;
+        margin-top: 70px;
+      }
+      .rules-title {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Menu Trigger Button -->
+  <button class="menu-btn" id="openMenu">MENU</button>
+
+  <!-- Navigation Drawer -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <span>MENU</span>
+      <button class="close-btn" id="closeMenu">&times;</button>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html">HOME</a>
+      <a href="how-it-works.html">HOW IT WORKS</a>
+      <a href="games.html">GAMES</a>
+      <a href="login.html">LOGIN</a>
+      <a href="find-us.html">FIND US</a>
+      <a href="request-us.html">REQUEST US</a>
+      <a href="contact-us.html">CONTACT US</a>
+    </nav>
+  </div>
+
+  <div class="backdrop" id="backdrop"></div>
+
+  <!-- Main Rules Content Card -->
+  <main class="rules-container">
+    <h1 class="rules-title">Developer Guidelines & Submission Rules</h1>
+
+    <!-- Wholesome & Authentic Art Highlight Banner -->
+    <div class="banner-box">
+      <div class="banner-title">🎨 Championing Genuine Artistry & Wholesome Entertainment</div>
+      <div class="banner-desc">
+        At Homebrew Hive, we believe retro gaming should celebrate creativity, craftsmanship, and community. Our physical store kiosks showcase games that inspire gamers of all ages, highlighting authentic indie talent and uplifting human artistry.
+      </div>
+    </div>
+
+    <!-- Rule Cards Grid -->
+    <div class="rules-grid">
+      
+      <div class="rule-item">
+        <h3>💡 1. Original Intellectual Property</h3>
+        <p>Submissions must consist of original storylines, characters, world-building, and code. Developers must possess full distribution rights to their ROMs and assets.</p>
+      </div>
+
+      <div class="rule-item">
+        <h3>🚫 2. No ROM Hacks or Reskins</h3>
+        <p>Games cannot be simple visual or audio reskins of existing commercial titles. We do not accept modified ROMs or unauthorized asset swaps of proprietary games.</p>
+      </div>
+
+      <div class="rule-item">
+        <h3>🎭 3. No Parody or Trademark Infringement</h3>
+        <p>Games must not rely on parodies or unauthorized uses of trademarked names, logos, or copyrighted characters from established franchises.</p>
+      </div>
+
+      <div class="rule-item">
+        <h3>🛡️ 4. Wholesome Narrative Focus</h3>
+        <p>Storylines and mechanics cannot center around sexually explicit content, gratuitous erotica, or adult themes unsuitable for public family retail environments.</p>
+      </div>
+
+      <div class="rule-item">
+        <h3>🤝 5. Zero Tolerance for Hate Content</h3>
+        <p>Narratives, dialogue, or themes promoting violence, hostility, or discrimination toward any race, religion, background, or identity are strictly prohibited.</p>
+      </div>
+
+      <div class="rule-item">
+        <h3>⚡ 6. Playable & Stable Build</h3>
+        <p>Submitted builds must be stable and fully playable end-to-end without game-breaking bugs, progression blockers, or malicious execution code.</p>
+      </div>
+
+    </div>
+
+    <a href="contact-us.html" class="back-link">&larr; Return to Contact Us</a>
+  </main>
+
+  <script>
+    const openMenuBtn = document.getElementById('openMenu');
+    const closeMenuBtn = document.getElementById('closeMenu');
+    const drawer = document.getElementById('drawer');
+    const backdrop = document.getElementById('backdrop');
+
+    function openDrawer() {
+      drawer.classList.add('open');
+      backdrop.classList.add('active');
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      backdrop.classList.remove('active');
+    }
+
+    openMenuBtn.addEventListener('click', openDrawer);
+    closeMenuBtn.addEventListener('click', closeDrawer);
+    backdrop.addEventListener('click', closeDrawer);
+  </script>
+</body>
+</html>
