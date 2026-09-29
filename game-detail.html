@@ -124,6 +124,7 @@
       grid-template-columns: 320px 1fr;
       gap: 50px;
       align-items: start;
+      margin-bottom: 50px;
     }
 
     .main-media-box {
@@ -216,10 +217,113 @@
       opacity: 0.9;
     }
 
+    /* 1920x1080 (16:9) Video Trailer Section */
+    .video-section {
+      width: 100%;
+      margin: 40px 0 20px;
+    }
+
+    .video-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+      background: #111111;
+      border: 2px solid #111;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .video-wrapper iframe,
+    .video-wrapper video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .video-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a1a;
+      color: #ffffff;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .video-placeholder img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0.6;
+    }
+
+    .play-button-overlay {
+      position: relative;
+      z-index: 2;
+      width: 72px;
+      height: 72px;
+      background: rgba(255, 204, 0, 0.9);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      border: 2px solid #111;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .play-button-overlay::after {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-top: 12px solid transparent;
+      border-bottom: 12px solid transparent;
+      border-left: 20px solid #111;
+      margin-left: 4px;
+    }
+
+    .video-placeholder:hover .play-button-overlay {
+      transform: scale(1.1);
+      background: #ffcc00;
+    }
+
+    .placeholder-text {
+      position: relative;
+      z-index: 2;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+
     .return-link {
       display: block;
       text-align: center;
-      margin-top: 60px;
+      margin-top: 40px;
       color: #555;
       text-decoration: none;
       font-size: 13px;
@@ -387,6 +491,15 @@
 
     </div>
 
+    <!-- Gameplay / Trailer Video Section -->
+    <section class="video-section">
+      <h3 class="video-title">Gameplay Preview</h3>
+      <div class="video-wrapper" id="videoWrapper">
+        <!-- Dynamic Video or Placeholder loads here -->
+      </div>
+    </section>
+
+    <!-- Return Link under Video -->
     <a href="games.html" class="return-link">Return to Selection</a>
   </main>
 
@@ -431,7 +544,7 @@
     let galleryImages = [];
     let currentImageIndex = 0;
 
-    // 3. Load Game Data & Lightbox Grid
+    // 3. Load Game Data, Screenshots Grid, & Video Player
     async function loadGameDetail() {
       const urlParams = new URLSearchParams(window.location.search);
       const gameId = urlParams.get('id');
@@ -502,9 +615,51 @@
         img.onclick = () => openLightbox(imgIndex);
         shotsGrid.appendChild(img);
       });
+
+      // Render Video Player or 1920x1080 Placeholder
+      renderVideoSection(data.video_url);
     }
 
-    // 4. Lightbox Controls
+    // 4. Video Rendering Logic
+    function renderVideoSection(videoUrl) {
+      const wrapper = document.getElementById('videoWrapper');
+      wrapper.innerHTML = '';
+
+      if (videoUrl && videoUrl.trim() !== '') {
+        const cleanUrl = videoUrl.trim();
+
+        // Check if YouTube link
+        if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) {
+          let embedUrl = cleanUrl;
+          if (cleanUrl.includes('watch?v=')) {
+            embedUrl = cleanUrl.replace('watch?v=', 'embed/');
+          } else if (cleanUrl.includes('youtu.be/')) {
+            embedUrl = cleanUrl.replace('youtu.be/', 'youtube.com/embed/');
+          }
+          wrapper.innerHTML = `<iframe src="${embedUrl}" title="Gameplay Video" allowfullscreen></iframe>`;
+        } 
+        // Direct MP4 / WebM video file
+        else {
+          wrapper.innerHTML = `
+            <video controls poster="video-banner.png">
+              <source src="${cleanUrl}" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          `;
+        }
+      } else {
+        // 1920x1080 Placeholder image/banner view
+        wrapper.innerHTML = `
+          <div class="video-placeholder">
+            <img src="video-banner.png" alt="Gameplay Video Placeholder" onerror="this.style.display='none'" />
+            <div class="play-button-overlay"></div>
+            <div class="placeholder-text">Gameplay Trailer Coming Soon</div>
+          </div>
+        `;
+      }
+    }
+
+    // 5. Lightbox Controls
     function openLightbox(index) {
       if (galleryImages.length === 0) return;
       currentImageIndex = index;
@@ -537,7 +692,7 @@
       if (e.key === 'ArrowRight') navigateLightbox(1);
     });
 
-    // 5. Wishlist Placeholder
+    // 6. Wishlist Placeholder
     async function toggleWishlist() {
       const btn = document.getElementById('wishlistBtn');
       btn.textContent = 'Added to Wishlist ✓';
