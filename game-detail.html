@@ -194,7 +194,7 @@
       background-color: #2e7d32;
     }
 
-    /* Screenshots Grid (4 on Desktop, 2x2 on Mobile) */
+    /* Screenshots Grid (Dynamic Layout) */
     .screenshots-grid {
       display: grid;
       grid-template-columns: repeat(4, 140px);
@@ -210,6 +210,7 @@
       border-radius: 4px;
       cursor: pointer !important;
       transition: transform 0.2s ease, opacity 0.2s ease;
+      background-color: #eee;
     }
 
     .screenshot-thumb:hover {
@@ -217,7 +218,7 @@
       opacity: 0.9;
     }
 
-    /* 1920x1080 (16:9) Video Trailer Section */
+    /* 16:9 Video Trailer Section */
     .video-section {
       width: 100%;
       margin: 40px 0 20px;
@@ -266,16 +267,6 @@
       color: #ffffff;
       text-align: center;
       padding: 20px;
-    }
-
-    .video-placeholder img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      position: absolute;
-      top: 0;
-      left: 0;
-      opacity: 0.6;
     }
 
     .play-button-overlay {
@@ -544,7 +535,20 @@
     let galleryImages = [];
     let currentImageIndex = 0;
 
-    // 3. Load Game Data, Screenshots Grid, & Video Player
+    // Helper: Convert Google Drive URLs to direct renderable image links
+    function formatImageUrl(url) {
+      if (!url) return '';
+      const cleanUrl = url.trim();
+      if (cleanUrl.includes('drive.google.com') && cleanUrl.includes('/file/d/')) {
+        const fileIdMatch = cleanUrl.match(/\/file\/d\/([^\/]+)/);
+        if (fileIdMatch && fileIdMatch[1]) {
+          return `https://lh3.googleusercontent.com/d/${fileIdMatch[1]}`;
+        }
+      }
+      return cleanUrl;
+    }
+
+    // 3. Load Game Data, Dynamic Screenshots Grid, & Video Player
     async function loadGameDetail() {
       const urlParams = new URLSearchParams(window.location.search);
       const gameId = urlParams.get('id');
@@ -566,26 +570,28 @@
         return;
       }
 
-      // Populate Text & Price
+      // Populate Title
       document.getElementById('gameTitle').textContent = data.title;
       
+      // Cleanly format price string without duplicate '$'
       let priceVal = "10.99";
-      if (data.price !== undefined && data.price !== null && !isNaN(parseFloat(data.price))) {
-        priceVal = parseFloat(data.price).toFixed(2);
+      if (data.price !== undefined && data.price !== null) {
+        let rawPrice = String(data.price).trim();
+        priceVal = rawPrice.startsWith('$') ? rawPrice.substring(1) : rawPrice;
       }
       document.getElementById('gamePrice').textContent = `PRINT PRICE: $${priceVal}`;
       document.getElementById('gameDesc').textContent = data.description || 'No description available.';
 
-      const mainImgSrc = data.cartridge_image_url || data.image_url;
+      const mainImgSrc = formatImageUrl(data.cartridge_image_url || data.image_url);
       document.getElementById('cartridgeImg').src = mainImgSrc;
 
-      // Reset gallery
+      // Reset gallery with main image at index 0
       galleryImages = [mainImgSrc];
 
       const shotsGrid = document.getElementById('screenshotsGrid');
       shotsGrid.innerHTML = '';
 
-      // Check for screenshots in data or build defaults
+      // Parse screenshots column dynamically from Supabase
       let shotsList = [];
 
       if (Array.isArray(data.screenshots)) {
@@ -598,25 +604,27 @@
         }
       }
 
-      // Default fallback screenshots if none stored in DB
-      if (shotsList.length === 0) {
-        shotsList = ['shot1.png', 'shot2.png', 'shot3.png', 'shot4.png'];
+      // Render thumbnail images if present in Supabase
+      if (shotsList.length > 0) {
+        shotsGrid.style.display = 'grid';
+        shotsList.forEach((shotUrl) => {
+          const cleanShotUrl = formatImageUrl(shotUrl);
+          galleryImages.push(cleanShotUrl);
+          const imgIndex = galleryImages.length - 1;
+
+          const img = document.createElement('img');
+          img.src = cleanShotUrl;
+          img.className = 'screenshot-thumb';
+          img.alt = `${data.title} Screenshot`;
+          img.onclick = () => openLightbox(imgIndex);
+          shotsGrid.appendChild(img);
+        });
+      } else {
+        // Hide screenshot container if no screenshots exist in database
+        shotsGrid.style.display = 'none';
       }
 
-      // Render thumbnails and add to gallery
-      shotsList.forEach((shotUrl) => {
-        galleryImages.push(shotUrl);
-        const imgIndex = galleryImages.length - 1;
-
-        const img = document.createElement('img');
-        img.src = shotUrl;
-        img.className = 'screenshot-thumb';
-        img.alt = 'Screenshot';
-        img.onclick = () => openLightbox(imgIndex);
-        shotsGrid.appendChild(img);
-      });
-
-      // Render Video Player or 1920x1080 Placeholder
+      // Render Video Player or Trailer Section
       renderVideoSection(data.video_url);
     }
 
@@ -628,30 +636,29 @@
       if (videoUrl && videoUrl.trim() !== '') {
         const cleanUrl = videoUrl.trim();
 
-        // Check if YouTube link
+        // YouTube video format
         if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) {
           let embedUrl = cleanUrl;
           if (cleanUrl.includes('watch?v=')) {
-            embedUrl = cleanUrl.replace('watch?v=', 'embed/');
+            embedUrl = cleanUrl.replace('watch?v=', 'embed/').split('&')[0];
           } else if (cleanUrl.includes('youtu.be/')) {
-            embedUrl = cleanUrl.replace('youtu.be/', 'youtube.com/embed/');
+            embedUrl = cleanUrl.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
           }
           wrapper.innerHTML = `<iframe src="${embedUrl}" title="Gameplay Video" allowfullscreen></iframe>`;
         } 
         // Direct MP4 / WebM video file
         else {
           wrapper.innerHTML = `
-            <video controls poster="video-banner.png">
+            <video controls>
               <source src="${cleanUrl}" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
           `;
         }
       } else {
-        // 1920x1080 Placeholder image/banner view
+        // Placeholder when no video link is provided
         wrapper.innerHTML = `
           <div class="video-placeholder">
-            <img src="video-banner.png" alt="Gameplay Video Placeholder" onerror="this.style.display='none'" />
             <div class="play-button-overlay"></div>
             <div class="placeholder-text">Gameplay Trailer Coming Soon</div>
           </div>
@@ -692,7 +699,7 @@
       if (e.key === 'ArrowRight') navigateLightbox(1);
     });
 
-    // 6. Wishlist Placeholder
+    // 6. Wishlist Handler
     async function toggleWishlist() {
       const btn = document.getElementById('wishlistBtn');
       btn.textContent = 'Added to Wishlist ✓';
