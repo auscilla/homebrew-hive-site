@@ -1003,6 +1003,9 @@
       const video = document.getElementById('newGameVideo').value.trim();
       const rom = document.getElementById('newGameRom').value.trim();
 
+      const devEmail = currentUser ? currentUser.email : '';
+
+      // Primary insertion attempt
       const { data, error } = await supabaseClient
         .from('games')
         .insert([
@@ -1015,24 +1018,45 @@
             image_url: cartImg,
             video_url: video,
             rom_url: rom,
-            developer_email: currentUser.email,
+            developer_email: devEmail,
             status: 'Pending'
           }
         ]);
 
       if (error) {
-        console.error('Error adding new game:', error);
-        statusDiv.textContent = 'Failed to submit game. Please check your entries.';
-        statusDiv.style.color = '#d9534f';
-      } else {
-        statusDiv.textContent = 'Game submitted successfully! Placed in Pending Review.';
-        statusDiv.style.color = '#2e7d32';
+        console.error('Primary game insert failed:', error);
 
-        setTimeout(() => {
-          closeAddGameModal();
-          loadDeveloperGames(currentUser.email);
-        }, 1200);
+        // Fallback attempt with minimal required fields
+        const { error: fallbackError } = await supabaseClient
+          .from('games')
+          .insert([
+            {
+              title: title,
+              price: price,
+              description: desc,
+              cartridge_image_url: cartImg,
+              image_url: cartImg,
+              developer_email: devEmail,
+              status: 'Pending'
+            }
+          ]);
+
+        if (fallbackError) {
+          console.error('Fallback game insert failed:', fallbackError);
+          // Output explicit error message from Supabase to diagnose column or RLS issues directly
+          statusDiv.textContent = `Error: ${error.message || error.details || 'Database insert rejected'}`;
+          statusDiv.style.color = '#d9534f';
+          return;
+        }
       }
+
+      statusDiv.textContent = 'Game submitted successfully! Placed in Pending Review.';
+      statusDiv.style.color = '#2e7d32';
+
+      setTimeout(() => {
+        closeAddGameModal();
+        if (currentUser) loadDeveloperGames(currentUser.email);
+      }, 1200);
     }
 
     function logout() {
