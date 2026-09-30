@@ -194,6 +194,10 @@
       background-color: #2e7d32;
     }
 
+    .action-btn.added:hover {
+      background-color: #1b5e20;
+    }
+
     /* Screenshots Grid */
     .screenshots-grid {
       display: grid;
@@ -668,7 +672,7 @@
       return cleanUrl;
     }
 
-    // 3. Load Game Data, Screenshots, & Check Wishlist
+    // 3. Load Game Data, Screenshots, & Check Wishlist Status
     async function loadGameDetail() {
       const urlParams = new URLSearchParams(window.location.search);
       const gameId = urlParams.get('id');
@@ -778,13 +782,17 @@
       }
     }
 
-    // 5. Wishlist Management Logic
+    // 5. Wishlist Management Logic (Add & Remove Toggling)
     function checkWishlistStatus() {
       if (loggedGamer && loggedGamer.wishlist) {
         const items = loggedGamer.wishlist.split(', ').map(s => s.trim());
         if (items.includes(currentGameTitle)) {
           markWishlistAdded();
+        } else {
+          markWishlistRemoved();
         }
+      } else {
+        markWishlistRemoved();
       }
     }
 
@@ -794,11 +802,24 @@
       btn.classList.add('added');
     }
 
+    function markWishlistRemoved() {
+      const btn = document.getElementById('wishlistBtn');
+      btn.textContent = '+ Add to Wishlist';
+      btn.classList.remove('added');
+    }
+
     async function toggleWishlist() {
-      if (loggedGamer) {
-        await executeAddToWishlist(loggedGamer);
-      } else {
+      if (!loggedGamer) {
         openWishlistModal();
+        return;
+      }
+
+      let currentList = loggedGamer.wishlist ? loggedGamer.wishlist.split(', ').map(s => s.trim()).filter(Boolean) : [];
+      
+      if (currentList.includes(currentGameTitle)) {
+        await executeRemoveFromWishlist(loggedGamer);
+      } else {
+        await executeAddToWishlist(loggedGamer);
       }
     }
 
@@ -869,6 +890,26 @@
         markWishlistAdded();
       } else {
         console.error('Failed to update wishlist:', error);
+      }
+    }
+
+    async function executeRemoveFromWishlist(user) {
+      let currentList = user.wishlist ? user.wishlist.split(', ').map(s => s.trim()).filter(Boolean) : [];
+      currentList = currentList.filter(title => title !== currentGameTitle);
+      const updatedWishlistStr = currentList.join(', ');
+
+      const { error } = await supabaseClient
+        .from('users')
+        .update({ wishlist: updatedWishlistStr })
+        .eq('id', user.id);
+
+      if (!error) {
+        user.wishlist = updatedWishlistStr;
+        loggedGamer = user;
+        localStorage.setItem('hiveGamer', JSON.stringify(loggedGamer));
+        markWishlistRemoved();
+      } else {
+        console.error('Failed to remove from wishlist:', error);
       }
     }
 
