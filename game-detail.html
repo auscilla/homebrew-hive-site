@@ -194,7 +194,7 @@
       background-color: #2e7d32;
     }
 
-    /* Screenshots Grid (Dynamic Layout) */
+    /* Screenshots Grid */
     .screenshots-grid {
       display: grid;
       grid-template-columns: repeat(4, 140px);
@@ -295,11 +295,6 @@
       margin-left: 4px;
     }
 
-    .video-placeholder:hover .play-button-overlay {
-      transform: scale(1.1);
-      background: #ffcc00;
-    }
-
     .placeholder-text {
       position: relative;
       z-index: 2;
@@ -327,7 +322,107 @@
       color: #111;
     }
 
-    /* Lightbox Modal */
+    /* Lightbox & Wishlist Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      border: 2px solid #111;
+      border-radius: 8px;
+      max-width: 440px;
+      width: 100%;
+      padding: 24px;
+      position: relative;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 2px solid #111;
+      padding-bottom: 10px;
+    }
+
+    .modal-header h3 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #111;
+      border-radius: 4px;
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: #111;
+      color: #fff;
+      border: none;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+
+    .submit-btn:hover {
+      background: #333;
+    }
+
+    .status-msg {
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    /* Lightbox Modal Specifics */
     .lightbox-modal {
       position: fixed;
       top: 0;
@@ -362,7 +457,6 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.6);
     }
 
-    /* Lightbox Controls */
     .lightbox-close {
       position: absolute;
       top: 24px;
@@ -407,13 +501,8 @@
       border-color: #111;
     }
 
-    .lightbox-arrow.left {
-      left: 30px;
-    }
-
-    .lightbox-arrow.right {
-      right: 30px;
-    }
+    .lightbox-arrow.left { left: 30px; }
+    .lightbox-arrow.right { right: 30px; }
 
     @media (max-width: 768px) {
       .detail-grid {
@@ -494,6 +583,35 @@
     <a href="games.html" class="return-link">Return to Selection</a>
   </main>
 
+  <!-- Gamer Wishlist Login Modal -->
+  <div class="modal-overlay" id="wishlistModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Gamer Login</h3>
+        <button class="modal-close" onclick="closeWishlistModal()">&times;</button>
+      </div>
+
+      <p style="font-size: 13px; color: #555; margin-bottom: 16px;">
+        Please enter your Gamer credentials to save this title to your wishlist.
+      </p>
+
+      <form id="wishlistAuthForm" onsubmit="handleWishlistAuth(event)">
+        <div class="form-group">
+          <label for="wishlistEmail">Gamer Email Address *</label>
+          <input type="email" id="wishlistEmail" required placeholder="gamer@example.com" />
+        </div>
+
+        <div class="form-group">
+          <label for="wishlistPin">4-Digit PIN *</label>
+          <input type="password" id="wishlistPin" maxlength="4" pattern="\d{4}" inputmode="numeric" required placeholder="1234" />
+        </div>
+
+        <button type="submit" class="submit-btn">Login & Add to Wishlist</button>
+        <div id="wishlistStatus" class="status-msg"></div>
+      </form>
+    </div>
+  </div>
+
   <!-- Lightbox Modal -->
   <div class="lightbox-modal" id="lightbox">
     <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
@@ -534,6 +652,8 @@
 
     let galleryImages = [];
     let currentImageIndex = 0;
+    let currentGameTitle = '';
+    let loggedGamer = JSON.parse(localStorage.getItem('hiveGamer') || 'null');
 
     // Helper: Convert Google Drive URLs to direct renderable image links
     function formatImageUrl(url) {
@@ -548,7 +668,7 @@
       return cleanUrl;
     }
 
-    // 3. Load Game Data, Dynamic Screenshots Grid, & Video Player
+    // 3. Load Game Data, Screenshots, & Check Wishlist
     async function loadGameDetail() {
       const urlParams = new URLSearchParams(window.location.search);
       const gameId = urlParams.get('id');
@@ -570,7 +690,7 @@
         return;
       }
 
-      // Populate Title
+      currentGameTitle = data.title;
       document.getElementById('gameTitle').textContent = data.title;
       
       // Cleanly format price string without duplicate '$'
@@ -591,9 +711,7 @@
       const shotsGrid = document.getElementById('screenshotsGrid');
       shotsGrid.innerHTML = '';
 
-      // Parse screenshots column dynamically from Supabase
       let shotsList = [];
-
       if (Array.isArray(data.screenshots)) {
         shotsList = data.screenshots;
       } else if (typeof data.screenshots === 'string' && data.screenshots.trim().length > 0) {
@@ -604,7 +722,6 @@
         }
       }
 
-      // Render thumbnail images if present in Supabase
       if (shotsList.length > 0) {
         shotsGrid.style.display = 'grid';
         shotsList.forEach((shotUrl) => {
@@ -620,15 +737,14 @@
           shotsGrid.appendChild(img);
         });
       } else {
-        // Hide screenshot container if no screenshots exist in database
         shotsGrid.style.display = 'none';
       }
 
-      // Render Video Player or Trailer Section
       renderVideoSection(data.video_url);
+      checkWishlistStatus();
     }
 
-    // 4. Video Rendering Logic
+    // 4. Video Rendering
     function renderVideoSection(videoUrl) {
       const wrapper = document.getElementById('videoWrapper');
       wrapper.innerHTML = '';
@@ -636,7 +752,6 @@
       if (videoUrl && videoUrl.trim() !== '') {
         const cleanUrl = videoUrl.trim();
 
-        // YouTube video format
         if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) {
           let embedUrl = cleanUrl;
           if (cleanUrl.includes('watch?v=')) {
@@ -645,9 +760,7 @@
             embedUrl = cleanUrl.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
           }
           wrapper.innerHTML = `<iframe src="${embedUrl}" title="Gameplay Video" allowfullscreen></iframe>`;
-        } 
-        // Direct MP4 / WebM video file
-        else {
+        } else {
           wrapper.innerHTML = `
             <video controls>
               <source src="${cleanUrl}" type="video/mp4" />
@@ -656,7 +769,6 @@
           `;
         }
       } else {
-        // Placeholder when no video link is provided
         wrapper.innerHTML = `
           <div class="video-placeholder">
             <div class="play-button-overlay"></div>
@@ -666,7 +778,101 @@
       }
     }
 
-    // 5. Lightbox Controls
+    // 5. Wishlist Management Logic
+    function checkWishlistStatus() {
+      if (loggedGamer && loggedGamer.wishlist) {
+        const items = loggedGamer.wishlist.split(', ').map(s => s.trim());
+        if (items.includes(currentGameTitle)) {
+          markWishlistAdded();
+        }
+      }
+    }
+
+    function markWishlistAdded() {
+      const btn = document.getElementById('wishlistBtn');
+      btn.textContent = 'Added to Wishlist ✓';
+      btn.classList.add('added');
+    }
+
+    async function toggleWishlist() {
+      if (loggedGamer) {
+        await executeAddToWishlist(loggedGamer);
+      } else {
+        openWishlistModal();
+      }
+    }
+
+    function openWishlistModal() {
+      document.getElementById('wishlistModal').classList.add('active');
+      document.getElementById('wishlistStatus').textContent = '';
+      document.getElementById('wishlistAuthForm').reset();
+    }
+
+    function closeWishlistModal() {
+      document.getElementById('wishlistModal').classList.remove('active');
+    }
+
+    async function handleWishlistAuth(e) {
+      e.preventDefault();
+      const email = document.getElementById('wishlistEmail').value.trim().toLowerCase();
+      const pin = document.getElementById('wishlistPin').value.trim();
+      const statusDiv = document.getElementById('wishlistStatus');
+
+      statusDiv.textContent = 'Verifying account...';
+      statusDiv.style.color = '#333';
+
+      const { data, error } = await supabaseClient
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('pin', pin)
+        .eq('account_type', 'gamer')
+        .maybeSingle();
+
+      if (error || !data) {
+        statusDiv.textContent = 'Invalid email or 4-digit PIN for Gamer account.';
+        statusDiv.style.color = '#d9534f';
+        return;
+      }
+
+      loggedGamer = data;
+      localStorage.setItem('hiveGamer', JSON.stringify(loggedGamer));
+      
+      statusDiv.textContent = 'Logged in! Saving to wishlist...';
+      statusDiv.style.color = '#2e7d32';
+
+      await executeAddToWishlist(loggedGamer);
+
+      setTimeout(() => {
+        closeWishlistModal();
+      }, 1000);
+    }
+
+    async function executeAddToWishlist(user) {
+      let currentList = user.wishlist ? user.wishlist.split(', ').map(s => s.trim()).filter(Boolean) : [];
+      
+      if (!currentList.includes(currentGameTitle)) {
+        currentList.push(currentGameTitle);
+      }
+
+      const updatedWishlistStr = currentList.join(', ');
+
+      const { error } = await supabaseClient
+        .from('users')
+        .update({ wishlist: updatedWishlistStr })
+        .eq('id', user.id);
+
+      if (!error) {
+        user.wishlist = updatedWishlistStr;
+        loggedGamer = user;
+        localStorage.setItem('hiveGamer', JSON.stringify(loggedGamer));
+        markWishlistAdded();
+      } else {
+        console.error('Failed to update wishlist:', error);
+      }
+    }
+
+    // 6. Lightbox Controls
     function openLightbox(index) {
       if (galleryImages.length === 0) return;
       currentImageIndex = index;
@@ -698,13 +904,6 @@
       if (e.key === 'ArrowLeft') navigateLightbox(-1);
       if (e.key === 'ArrowRight') navigateLightbox(1);
     });
-
-    // 6. Wishlist Handler
-    async function toggleWishlist() {
-      const btn = document.getElementById('wishlistBtn');
-      btn.textContent = 'Added to Wishlist ✓';
-      btn.classList.add('added');
-    }
 
     loadGameDetail();
   </script>
