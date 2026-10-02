@@ -161,10 +161,31 @@
 
     .step-text {
       flex: 1;
+      text-align: center;
+    }
+
+    .step-text p {
       font-size: 1.25rem;
       line-height: 1.4;
       color: #222;
-      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .see-games-btn {
+      display: inline-block;
+      background-color: #111;
+      color: #fff;
+      text-decoration: none;
+      padding: 12px 28px;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      border-radius: 4px;
+      transition: background 0.2s ease;
+    }
+
+    .see-games-btn:hover {
+      background-color: #333;
     }
 
     .step-media {
@@ -260,7 +281,7 @@
         margin-bottom: 40px;
       }
 
-      .step-text {
+      .step-text p {
         font-size: 1.1rem;
       }
 
@@ -340,6 +361,7 @@
       <div class="step-row">
         <div class="step-text">
           <p>Select from our list of games & print cartridges</p>
+          <a href="games.html" class="see-games-btn">See Game List</a>
         </div>
         <div class="step-media">
           <img src="step3-selection.png" alt="Game Selection Grid" />
