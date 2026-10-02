@@ -125,9 +125,10 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
+    /* 3-Way Role Toggle */
     .role-toggle {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       margin-bottom: 24px;
     }
 
@@ -136,9 +137,11 @@
       padding: 10px;
       border: 2px solid #111;
       background: #f0f0f0;
-      font-weight: 600;
+      font-weight: 700;
+      font-size: 13px;
       cursor: pointer;
       border-radius: 4px;
+      text-transform: uppercase;
     }
 
     .role-btn.active {
@@ -295,8 +298,8 @@
       padding: 0;
     }
 
-    /* Developer Game List & Status Badges */
-    .dev-game-item {
+    /* Standard Lists (Dev Games & Shop Print Logs) */
+    .list-item {
       background: #ffffff;
       border: 1.5px solid #111;
       border-radius: 6px;
@@ -304,17 +307,18 @@
       margin-bottom: 12px;
     }
 
-    .dev-game-header {
+    .list-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .dev-game-title {
+    .list-title {
       font-size: 15px;
       font-weight: 700;
     }
 
+    /* Dev Badges */
     .status-badge {
       font-size: 11px;
       font-weight: 700;
@@ -335,6 +339,20 @@
       background: #fff8e1;
       color: #f57f17;
       border: 1px solid #ffe082;
+    }
+
+    /* Shop History Log Details */
+    .log-date {
+      font-size: 12px;
+      color: #555;
+      font-weight: 600;
+    }
+
+    .log-game {
+      font-size: 15px;
+      font-weight: 800;
+      color: #111;
+      margin-top: 4px;
     }
 
     .more-info-btn {
@@ -387,7 +405,7 @@
       background: #e6b800;
     }
 
-    /* Modals (Reset PIN & Add Game) */
+    /* Modals */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -467,6 +485,9 @@
       .dashboard h2 {
         font-size: 1.25rem;
       }
+      .role-toggle {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
@@ -501,14 +522,15 @@
     <div class="role-toggle">
       <button class="role-btn active" id="gamerRoleBtn" onclick="setRole('gamer')">GAMER</button>
       <button class="role-btn" id="devRoleBtn" onclick="setRole('dev')">GAME DEV</button>
+      <button class="role-btn" id="shopRoleBtn" onclick="setRole('store')">GAME SHOP</button>
     </div>
 
     <h2 class="auth-title" id="formTitle">Gamer Login</h2>
 
     <form id="authForm" onsubmit="handleSubmit(event)">
       <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" required placeholder="gamer@example.com" />
+        <label id="emailLabel" for="email">Email Address</label>
+        <input type="email" id="email" required placeholder="email@example.com" />
       </div>
 
       <div class="form-group">
@@ -534,20 +556,19 @@
     <h2 id="dashEmail">Welcome!</h2>
     <p class="sub-text" id="dashRole">Account Type: Gamer</p>
 
-    <!-- Gamer View: Wishlist & Past Purchases -->
+    <!-- Gamer View -->
     <div id="gamerSection">
       <div class="info-card">
         <h3>Wishlist</h3>
         <div id="dashWishlist" class="wishlist-tags"></div>
       </div>
-
       <div class="info-card">
         <h3>Past Purchases</h3>
         <p id="dashPurchases" class="empty-msg">No past transactions found.</p>
       </div>
     </div>
 
-    <!-- Game Developer View: Submitted Games List -->
+    <!-- Game Developer View -->
     <div id="devSection" style="display: none;">
       <div class="info-card">
         <h3>Your Submitted Games</h3>
@@ -555,9 +576,17 @@
           <p class="empty-msg">Loading submitted games...</p>
         </div>
       </div>
-
-      <!-- Add Game Action Button -->
       <button class="add-game-btn" onclick="openAddGameModal()">+ Add New Game</button>
+    </div>
+
+    <!-- Game Shop View (Print History) -->
+    <div id="shopSection" style="display: none;">
+      <div class="info-card">
+        <h3>Shop Print History</h3>
+        <div id="shopPrintLogs">
+          <p class="empty-msg">Loading print history...</p>
+        </div>
+      </div>
     </div>
 
     <button class="logout-btn" onclick="logout()">Log Out</button>
@@ -588,7 +617,7 @@
     </div>
   </div>
 
-  <!-- Add Game Form Modal -->
+  <!-- Add Game Form Modal (Dev Only) -->
   <div class="modal-overlay" id="addGameModal">
     <div class="modal-box">
       <div class="modal-header">
@@ -680,6 +709,17 @@
       selectedRole = role;
       document.getElementById('gamerRoleBtn').classList.toggle('active', role === 'gamer');
       document.getElementById('devRoleBtn').classList.toggle('active', role === 'dev');
+      document.getElementById('shopRoleBtn').classList.toggle('active', role === 'store');
+      
+      const emailLabel = document.getElementById('emailLabel');
+      if (role === 'store') {
+        emailLabel.textContent = 'Shop/Store Email Address';
+        document.getElementById('email').placeholder = 'shop@example.com';
+      } else {
+        emailLabel.textContent = 'Email Address';
+        document.getElementById('email').placeholder = role === 'dev' ? 'dev@example.com' : 'gamer@example.com';
+      }
+
       updateFormUI();
     }
 
@@ -689,12 +729,18 @@
     }
 
     function updateFormUI() {
-      const roleText = selectedRole === 'gamer' ? 'Gamer' : 'Game Dev';
+      let roleText = 'Gamer';
+      if (selectedRole === 'dev') roleText = 'Game Dev';
+      if (selectedRole === 'store') roleText = 'Game Shop';
+
       document.getElementById('formTitle').textContent = isSignUp ? `Create ${roleText} Account` : `${roleText} Login`;
       document.getElementById('submitBtn').textContent = isSignUp ? 'Create Account' : 'Log In';
+      
+      // Kiosk OS logic typically handles shop creation, but we leave register open for web.
       document.getElementById('switchMode').innerHTML = isSignUp 
         ? `Already have an account? <a onclick="toggleMode()">Log In</a>` 
         : `Don't have an account? <a onclick="toggleMode()">Create Account</a>`;
+        
       document.getElementById('errorMsg').textContent = '';
     }
 
@@ -744,7 +790,7 @@
           .single();
 
         if (error || !data) {
-          errorMsg.textContent = 'Invalid email or 4-digit PIN.';
+          errorMsg.textContent = 'Invalid email or 4-digit PIN for this account type.';
           return;
         }
 
@@ -760,15 +806,27 @@
 
       document.getElementById('dashEmail').textContent = `Welcome, ${user.email}!`;
 
+      const gamerSec = document.getElementById('gamerSection');
+      const devSec = document.getElementById('devSection');
+      const shopSec = document.getElementById('shopSection');
+
       if (user.account_type === 'dev') {
         document.getElementById('dashRole').textContent = 'Account Type: Game Developer';
-        document.getElementById('gamerSection').style.display = 'none';
-        document.getElementById('devSection').style.display = 'block';
+        gamerSec.style.display = 'none';
+        shopSec.style.display = 'none';
+        devSec.style.display = 'block';
         loadDeveloperGames(user.email);
+      } else if (user.account_type === 'store') {
+        document.getElementById('dashRole').textContent = 'Account Type: Game Shop / Retailer';
+        gamerSec.style.display = 'none';
+        devSec.style.display = 'none';
+        shopSec.style.display = 'block';
+        loadShopPrintHistory(user.email);
       } else {
         document.getElementById('dashRole').textContent = 'Account Type: Gamer';
-        document.getElementById('devSection').style.display = 'none';
-        document.getElementById('gamerSection').style.display = 'block';
+        devSec.style.display = 'none';
+        shopSec.style.display = 'none';
+        gamerSec.style.display = 'block';
         renderWishlist(user.wishlist);
         document.getElementById('dashPurchases').textContent = user.purchases || 'No past transactions found.';
       }
@@ -776,7 +834,10 @@
 
     // 6. Reset PIN Logic
     function openResetModal() {
-      const roleText = selectedRole === 'gamer' ? 'Gamer' : 'Game Dev';
+      let roleText = 'Gamer';
+      if (selectedRole === 'dev') roleText = 'Game Dev';
+      if (selectedRole === 'store') roleText = 'Game Shop';
+      
       document.getElementById('resetModalTitle').textContent = `Reset ${roleText} PIN`;
       document.getElementById('resetModal').classList.add('active');
       document.getElementById('resetStatus').textContent = '';
@@ -802,7 +863,6 @@
         return;
       }
 
-      // Check if email & account_type exist in Supabase
       const { data, error: fetchErr } = await supabaseClient
         .from('users')
         .select('*')
@@ -816,23 +876,18 @@
         return;
       }
 
-      // Email exists -> Update PIN
       const { error: updateErr } = await supabaseClient
         .from('users')
         .update({ pin: newPin })
         .eq('id', data.id);
 
       if (updateErr) {
-        console.error('Error updating PIN:', updateErr);
         statusDiv.textContent = 'Failed to update PIN. Please try again.';
         statusDiv.style.color = '#d9534f';
       } else {
         statusDiv.textContent = 'PIN updated successfully! You can now log in.';
         statusDiv.style.color = '#2e7d32';
-
-        setTimeout(() => {
-          closeResetModal();
-        }, 1800);
+        setTimeout(() => closeResetModal(), 1800);
       }
     }
 
@@ -875,7 +930,45 @@
       }
     }
 
-    // 8. Developer Submitted Games & Request Edit Flow
+    // 8. Game Shop History Flow
+    async function loadShopPrintHistory(storeEmail) {
+      const container = document.getElementById('shopPrintLogs');
+      
+      const { data, error } = await supabaseClient
+        .from('print_logs')
+        .select('*')
+        .eq('store_email', storeEmail)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching print logs:', error);
+        container.innerHTML = '<p class="empty-msg">Error loading your shop print history.</p>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p class="empty-msg">No kiosk prints recorded yet.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      data.forEach(log => {
+        // Format Timestamp (e.g. Oct 2, 2026 - 1:47 PM)
+        const dateObj = new Date(log.created_at);
+        const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+        const formattedDate = dateObj.toLocaleDateString(undefined, options);
+
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.innerHTML = `
+          <div class="log-date">${formattedDate}</div>
+          <div class="log-game">${log.game_title}</div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // 9. Developer Submitted Games & Request Edit Flow
     async function loadDeveloperGames(email) {
       const container = document.getElementById('devGamesList');
       
@@ -902,11 +995,11 @@
         const badgeLabel = isApproved ? '🟢 Approved' : '🟡 Pending Review';
 
         const item = document.createElement('div');
-        item.className = 'dev-game-item';
+        item.className = 'list-item';
         item.innerHTML = `
-          <div class="dev-game-header">
+          <div class="list-header">
             <div>
-              <span class="dev-game-title">${game.title}</span>
+              <span class="list-title">${game.title}</span>
               <span class="status-badge ${badgeClass}">${badgeLabel}</span>
             </div>
             <button class="more-info-btn" onclick="toggleEditDropdown(${index})">More Info / Edit</button>
@@ -968,7 +1061,6 @@
         ]);
 
       if (error) {
-        console.error('Edit request error:', error);
         statusDiv.textContent = 'Failed to send request. Please try again.';
         statusDiv.style.color = '#d9534f';
       } else {
@@ -978,7 +1070,7 @@
       }
     }
 
-    // 9. Add Game Modal Functions
+    // 10. Add Game Modal Functions
     function openAddGameModal() {
       document.getElementById('addGameModal').classList.add('active');
       document.getElementById('addGameStatus').textContent = '';
@@ -1002,49 +1094,27 @@
       const cartImg = document.getElementById('newGameCartImg').value.trim();
       const video = document.getElementById('newGameVideo').value.trim();
       const rom = document.getElementById('newGameRom').value.trim();
-
       const devEmail = currentUser ? currentUser.email : '';
 
-      // Primary insertion attempt
-      const { data, error } = await supabaseClient
+      const { error } = await supabaseClient
         .from('games')
-        .insert([
-          {
-            title: title,
-            category: category,
-            price: price,
-            description: desc,
-            cartridge_image_url: cartImg,
-            image_url: cartImg,
-            video_url: video,
-            rom_url: rom,
-            developer_email: devEmail,
-            status: 'Pending'
-          }
-        ]);
+        .insert([{
+          title: title, category: category, price: price, description: desc,
+          cartridge_image_url: cartImg, image_url: cartImg, video_url: video,
+          rom_url: rom, developer_email: devEmail, status: 'Pending'
+        }]);
 
       if (error) {
-        console.error('Primary game insert failed:', error);
-
-        // Fallback attempt with minimal required fields
         const { error: fallbackError } = await supabaseClient
           .from('games')
-          .insert([
-            {
-              title: title,
-              price: price,
-              description: desc,
-              cartridge_image_url: cartImg,
-              image_url: cartImg,
-              developer_email: devEmail,
-              status: 'Pending'
-            }
-          ]);
+          .insert([{
+            title: title, price: price, description: desc,
+            cartridge_image_url: cartImg, image_url: cartImg,
+            developer_email: devEmail, status: 'Pending'
+          }]);
 
         if (fallbackError) {
-          console.error('Fallback game insert failed:', fallbackError);
-          // Output explicit error message from Supabase to diagnose column or RLS issues directly
-          statusDiv.textContent = `Error: ${error.message || error.details || 'Database insert rejected'}`;
+          statusDiv.textContent = `Error: ${error.message || 'Database insert rejected'}`;
           statusDiv.style.color = '#d9534f';
           return;
         }
@@ -1052,7 +1122,6 @@
 
       statusDiv.textContent = 'Game submitted successfully! Placed in Pending Review.';
       statusDiv.style.color = '#2e7d32';
-
       setTimeout(() => {
         closeAddGameModal();
         if (currentUser) loadDeveloperGames(currentUser.email);
