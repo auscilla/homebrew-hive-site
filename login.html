@@ -308,7 +308,7 @@
       line-height: 1;
     }
 
-    /* Developer / Gamer Game List Items */
+    /* Developer / Gamer / Shop List Items */
     .list-item {
       background: #ffffff;
       border: 1.5px solid #111;
@@ -758,7 +758,7 @@
     <!-- Game Shop View -->
     <div id="shopSection" style="display: none;">
       <div class="info-card">
-        <h3>Shop Print History</h3>
+        <h3>Shop Print History & Financials</h3>
         <div id="shopPrintLogs">
           <p class="empty-msg">Loading print history...</p>
         </div>
@@ -993,24 +993,19 @@
       }
     }
 
-    // Gamer Purchases Section (Direct from print_logs)
+    // Gamer Purchases Section
     async function loadGamerPurchases(email) {
       const container = document.getElementById('gamerPurchasesList');
       const client = getSupabase();
       if (!client) return;
 
-      // Fetch all print logs safely
-      const { data: logs, error } = await client
-        .from('print_logs')
-        .select('*');
+      const { data: logs, error } = await client.from('print_logs').select('*');
 
       if (error) {
-        console.error("Print logs error:", error);
         container.innerHTML = '<p class="empty-msg">Error loading purchases catalog.</p>';
         return;
       }
 
-      // Filter in JS to support any email column name without throwing PostgREST 400 errors
       const userLogs = (logs || []).filter(l => 
         (l.store_email && l.store_email.toLowerCase() === email.toLowerCase()) ||
         (l.customer_email && l.customer_email.toLowerCase() === email.toLowerCase()) ||
@@ -1023,17 +1018,14 @@
         return;
       }
 
-      // Deduplicate game titles
       const uniqueTitles = [...new Set(userLogs.map(l => l.game_title).filter(Boolean))];
 
-      // Fetch game details (image, etc.)
       const { data: allGames } = await client.from('games').select('*').in('title', uniqueTitles);
       const gamesMap = {};
       if (allGames) {
         allGames.forEach(g => { gamesMap[g.title] = g; });
       }
 
-      // Fetch upsells available for these games
       const { data: allUpsells } = await client.from('game_upsells').select('*').in('game_title', uniqueTitles);
 
       container.innerHTML = '';
@@ -1319,42 +1311,80 @@
       }
     }
 
-    // Game Shop History Flow
+    // Game Shop History & Financial Calculations
     async function loadShopPrintHistory(storeEmail) {
       const container = document.getElementById('shopPrintLogs');
       const client = getSupabase();
       if (!client) return;
       
-      const { data, error } = await client
-        .from('print_logs')
-        .select('*')
-        .eq('store_email', storeEmail)
-        .order('created_at', { ascending: false });
+      const { data: logs, error } = await client.from('print_logs').select('*').order('created_at', { ascending: false });
 
       if (error) {
         container.innerHTML = '<p class="empty-msg">Error loading your shop print history.</p>';
         return;
       }
 
-      if (!data || data.length === 0) {
+      const shopLogs = (logs || []).filter(l => l.store_email && l.store_email.toLowerCase() === storeEmail.toLowerCase());
+
+      if (shopLogs.length === 0) {
         container.innerHTML = '<p class="empty-msg">No kiosk prints recorded yet.</p>';
         return;
       }
 
-      container.innerHTML = '';
-      data.forEach(log => {
-        const dateObj = new Date(log.created_at);
-        const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
-        const formattedDate = dateObj.toLocaleDateString(undefined, options);
+      // Query games metadata for financial math
+      const titles = [...new Set(shopLogs.map(l => l.game_title).filter(Boolean))];
+      const { data: games } = await client.from('games').select('*').in('title', titles);
 
-        const item = document.createElement('div');
-        item.className = 'list-item';
-        item.innerHTML = `
-          <div style="font-size: 12px; color: #555; font-weight: 600;">${formattedDate}</div>
-          <div style="font-size: 15px; font-weight: 800; color: #111; margin-top: 4px;">${log.game_title}</div>
+      const gamesMap = {};
+      if (games) {
+        games.forEach(g => { gamesMap[g.title] = g; });
+      }
+
+      let totalEarnings = 0;
+
+      const logsHtml = shopLogs.map(log => {
+        const game = gamesMap[log.game_title] || {};
+        
+        // Financial parsing: Retail Price, Hive Cost, Developer Cut
+        const retailPrice = parseFloat(log.retail_price || String(game.price || '19.99').replace('$', '')) || 19.99;
+        const hiveCost = parseFloat(log.hive_cost || game.cost || 12.00);
+        const devCut = parseFloat(log.developer_cut || game.developer_cut || 2.50);
+        
+        // Shop Profit = Retail Price - Hive Cost - Dev Cut
+        const shopProfit = Math.max(0, retailPrice - hiveCost - devCut);
+        totalEarnings += shopProfit;
+
+        const dateObj = new Date(log.created_at);
+        const formattedDate = dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+        return `
+          <div class="list-item" style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="font-size: 11px; color: #666; font-weight: 600;">${formattedDate}</div>
+                <div style="font-size: 15px; font-weight: 800; color: #111; margin-top: 2px;">${log.game_title}</div>
+                <div style="font-size: 12px; color: #555; margin-top: 4px;">
+                  Retail: $${retailPrice.toFixed(2)} | Hive Fee: $${hiveCost.toFixed(2)} | Dev Cut: $${devCut.toFixed(2)}
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span class="status-badge approved" style="font-size: 12px; padding: 6px 10px;">+$${shopProfit.toFixed(2)} Profit</span>
+              </div>
+            </div>
+          </div>
         `;
-        container.appendChild(item);
-      });
+      }).join('');
+
+      container.innerHTML = `
+        <div style="background: #e8f5e9; border: 1.5px solid #a5d6a7; border-radius: 6px; padding: 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #2e7d32;">Total Shop Earnings</div>
+            <div style="font-size: 22px; font-weight: 900; color: #1b5e20;">$${totalEarnings.toFixed(2)}</div>
+          </div>
+          <div style="font-size: 12px; color: #2e7d32; font-weight: 600;">${shopLogs.length} ${shopLogs.length === 1 ? 'Cart Printed' : 'Carts Printed'}</div>
+        </div>
+        ${logsHtml}
+      `;
     }
 
     // Gamer Wishlist Functions
