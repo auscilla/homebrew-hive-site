@@ -955,9 +955,9 @@
         // Archive / Publish Button Logic
         let toggleArchiveBtn = '';
         if (statusText.toLowerCase() === 'archived') {
-          toggleArchiveBtn = `<button class="submit-btn btn-publish" onclick="toggleArchiveStatus(${game.id}, 'Archived')">Publish Game (Send to Pending)</button>`;
+          toggleArchiveBtn = `<button type="button" class="submit-btn btn-publish" onclick="toggleArchiveStatus('${game.id}', 'Archived')">Publish Game (Send to Pending)</button>`;
         } else {
-          toggleArchiveBtn = `<button class="submit-btn btn-archive" onclick="toggleArchiveStatus(${game.id}, '${statusText}')">Archive Game (Hide from Kiosk)</button>`;
+          toggleArchiveBtn = `<button type="button" class="submit-btn btn-archive" onclick="toggleArchiveStatus('${game.id}', '${statusText}')">Archive Game (Hide from Kiosk)</button>`;
         }
 
         const item = document.createElement('div');
@@ -1041,11 +1041,17 @@
       const newStatus = currentStatus.toLowerCase() === 'archived' ? 'Pending' : 'Archived';
       if (!confirm(`Are you sure you want to change the status to ${newStatus}?`)) return;
 
-      const { error } = await supabaseClient.from('games').update({ status: newStatus }).eq('id', gameId);
+      const { data, error } = await supabaseClient
+        .from('games')
+        .update({ status: newStatus })
+        .eq('id', gameId)
+        .select();
+
       if (!error) {
         loadDeveloperGames(currentUser.email);
       } else {
-        alert("Failed to update status.");
+        console.error("Supabase Error:", error);
+        alert(`Failed to update status: ${error.message || 'Unknown error'}`);
       }
     }
 
@@ -1125,87 +1131,4 @@
       data.forEach(log => {
         const dateObj = new Date(log.created_at);
         const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
-        const formattedDate = dateObj.toLocaleDateString(undefined, options);
-
-        const item = document.createElement('div');
-        item.className = 'list-item';
-        item.innerHTML = `
-          <div style="font-size: 12px; color: #555; font-weight: 600;">${formattedDate}</div>
-          <div style="font-size: 15px; font-weight: 800; color: #111; margin-top: 4px;">${log.game_title}</div>
-        `;
-        container.appendChild(item);
-      });
-    }
-
-    // Gamer Wishlist Functions
-    function renderWishlist(wishlistStr) {
-      const container = document.getElementById('dashWishlist');
-      container.innerHTML = '';
-      const items = wishlistStr ? wishlistStr.split(', ').filter(Boolean) : [];
-
-      if (items.length === 0) {
-        container.innerHTML = '<p class="empty-msg">No items in wishlist yet.</p>';
-        return;
-      }
-
-      items.forEach(item => {
-        const tag = document.createElement('div');
-        tag.className = 'wishlist-tag';
-        tag.innerHTML = `
-          <span>${item}</span>
-          <button onclick="removeFromWishlist('${item.replace(/'/g, "\\'")}')" title="Remove">&times;</button>
-        `;
-        container.appendChild(tag);
-      });
-    }
-
-    async function removeFromWishlist(itemToRemove) {
-      if (!currentUser) return;
-      let items = currentUser.wishlist ? currentUser.wishlist.split(', ').filter(Boolean) : [];
-      items = items.filter(i => i !== itemToRemove);
-      const newWishlistStr = items.join(', ');
-
-      const { error } = await supabaseClient.from('users').update({ wishlist: newWishlistStr }).eq('id', currentUser.id);
-      if (!error) {
-        currentUser.wishlist = newWishlistStr;
-        renderWishlist(newWishlistStr);
-      }
-    }
-
-    // Modals & Reset PIN
-    function openAddGameModal() { document.getElementById('addGameModal').classList.add('active'); }
-    function closeAddGameModal() { document.getElementById('addGameModal').classList.remove('active'); }
-    
-    function openResetModal() { document.getElementById('resetModal').classList.add('active'); }
-    function closeResetModal() { document.getElementById('resetModal').classList.remove('active'); }
-
-    async function handlePinReset(e) {
-      e.preventDefault();
-      const statusDiv = document.getElementById('resetStatus');
-      const email = document.getElementById('resetEmail').value.trim().toLowerCase();
-      const newPin = document.getElementById('resetNewPin').value.trim();
-
-      statusDiv.textContent = 'Checking account...'; statusDiv.style.color = '#333';
-
-      const { data, error: fetchErr } = await supabaseClient.from('users').select('*').eq('email', email).eq('account_type', selectedRole).maybeSingle();
-      if (fetchErr || !data) { statusDiv.textContent = 'Email not found for this account type.'; statusDiv.style.color = '#d9534f'; return; }
-
-      const { error: updateErr } = await supabaseClient.from('users').update({ pin: newPin }).eq('id', data.id);
-      if (updateErr) {
-        statusDiv.textContent = 'Failed to update PIN.'; statusDiv.style.color = '#d9534f';
-      } else {
-        statusDiv.textContent = 'PIN updated successfully!'; statusDiv.style.color = '#2e7d32';
-        setTimeout(() => closeResetModal(), 1800);
-      }
-    }
-
-    function logout() {
-      currentUser = null; devUpsells = [];
-      document.getElementById('authBox').style.display = 'block';
-      document.getElementById('dashboardBox').style.display = 'none';
-      document.getElementById('authForm').reset();
-    }
-  </script>
-</body>
-</html>
-
+        const formattedDate = dateObj
