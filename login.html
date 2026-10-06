@@ -337,7 +337,7 @@
     .readonly-panel h4 {
       font-size: 12px;
       text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
       color: #555;
       border-bottom: 1px solid #eee;
       padding-bottom: 4px;
@@ -355,27 +355,48 @@
       object-fit: cover;
       border-radius: 4px;
       border: 1px solid #ccc;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .info-thumb:hover { transform: scale(1.05); }
+
+    .info-details {
+      flex: 1;
     }
 
     .info-details p {
       font-size: 13px;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
       color: #333;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .info-gallery-container {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #eee;
+    }
+
+    .info-gallery-container p {
+      font-size: 13px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 8px;
     }
 
     .info-gallery {
       display: flex;
-      gap: 6px;
-      margin-top: 8px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
     .gallery-img {
-      width: 40px;
-      height: 40px;
+      width: 60px;
+      height: 60px;
       object-fit: cover;
       border: 1px solid #ccc;
-      border-radius: 2px;
+      border-radius: 4px;
       cursor: pointer;
       transition: transform 0.1s;
     }
@@ -409,6 +430,7 @@
       border-radius: 2px;
       margin-right: 10px;
       vertical-align: middle;
+      cursor: pointer;
     }
 
     .btn-remove-upsell {
@@ -675,7 +697,7 @@
     <button class="logout-btn" onclick="logout()">Log Out</button>
   </div>
 
-  <!-- Modals (Add Game & Reset PIN) Hidden for Brevity in Code Preview... Same as before -->
+  <!-- Modals (Add Game & Reset PIN) -->
   <div class="modal-overlay" id="addGameModal">
     <div class="modal-box">
       <div class="modal-header">
@@ -705,6 +727,28 @@
         </div>
         <button type="submit" class="submit-btn" id="addGameSubmitBtn">Submit Game for Review</button>
         <div id="addGameStatus" class="request-status"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reset PIN Modal -->
+  <div class="modal-overlay" id="resetModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="resetModalTitle">Reset PIN</h3>
+        <button class="modal-close" onclick="closeResetModal()">&times;</button>
+      </div>
+      <form id="resetPinForm" onsubmit="handlePinReset(event)">
+        <div class="form-group">
+          <label for="resetEmail">Email Address *</label>
+          <input type="email" id="resetEmail" required placeholder="your-email@example.com" />
+        </div>
+        <div class="form-group">
+          <label for="resetNewPin">New 4-Digit PIN *</label>
+          <input type="password" id="resetNewPin" maxlength="4" pattern="\d{4}" inputmode="numeric" required placeholder="4-digit PIN" />
+        </div>
+        <button type="submit" class="submit-btn">Update PIN</button>
+        <div id="resetStatus" class="request-status"></div>
       </form>
     </div>
   </div>
@@ -817,11 +861,29 @@
       document.getElementById('dashboardBox').style.display = 'block';
       document.getElementById('dashEmail').textContent = `Welcome, ${user.email}!`;
 
-      document.getElementById('gamerSection').style.display = user.account_type === 'gamer' ? 'block' : 'none';
-      document.getElementById('devSection').style.display = user.account_type === 'dev' ? 'block' : 'none';
-      document.getElementById('shopSection').style.display = user.account_type === 'store' ? 'block' : 'none';
+      const gamerSec = document.getElementById('gamerSection');
+      const devSec = document.getElementById('devSection');
+      const shopSec = document.getElementById('shopSection');
 
-      if (user.account_type === 'dev') loadDeveloperGames(user.email);
+      if (user.account_type === 'dev') {
+        document.getElementById('dashRole').textContent = 'Account Type: Game Developer';
+        gamerSec.style.display = 'none';
+        shopSec.style.display = 'none';
+        devSec.style.display = 'block';
+        loadDeveloperGames(user.email);
+      } else if (user.account_type === 'store') {
+        document.getElementById('dashRole').textContent = 'Account Type: Game Shop / Retailer';
+        gamerSec.style.display = 'none';
+        devSec.style.display = 'none';
+        shopSec.style.display = 'block';
+        loadShopPrintHistory(user.email);
+      } else {
+        document.getElementById('dashRole').textContent = 'Account Type: Gamer';
+        devSec.style.display = 'none';
+        shopSec.style.display = 'none';
+        gamerSec.style.display = 'block';
+        renderWishlist(user.wishlist);
+      }
     }
 
     // Developer View: Games & Up-Sells
@@ -856,7 +918,10 @@
 
         const mainImg = formatImageUrl(game.cartridge_image_url || game.image_url);
         
-        // Parse Gallery
+        // Ensure price formatting is correct (remove any existing $ symbol from database)
+        const displayPrice = String(game.price || '0.00').replace('$', '');
+
+        // Parse Gallery Images
         let shotsList = [];
         if (game.screenshots) {
           try {
@@ -865,7 +930,15 @@
             shotsList = game.screenshots.split(',').map(s => s.trim()).filter(Boolean);
           }
         }
-        let galleryHtml = shotsList.map(url => `<img class="gallery-img" src="${formatImageUrl(url)}" onclick="openLightbox('${formatImageUrl(url)}')" />`).join('');
+        
+        let galleryHtml = shotsList.length > 0 ? `
+          <div class="info-gallery-container">
+            <p>Gallery Images:</p>
+            <div class="info-gallery">
+              ${shotsList.map(url => `<img class="gallery-img" src="${formatImageUrl(url)}" onclick="openLightbox('${formatImageUrl(url)}')" />`).join('')}
+            </div>
+          </div>
+        ` : '';
 
         // Parse Upsells for this game
         let gameUpsells = devUpsells.filter(u => u.game_title === game.title);
@@ -903,11 +976,11 @@
               <div class="info-flex">
                 <img src="${mainImg}" class="info-thumb" onclick="openLightbox('${mainImg}')"/>
                 <div class="info-details">
-                  <p><strong>Print Price:</strong> $${game.price || '0.00'}</p>
-                  <p><strong>Description:</strong> ${game.description ? game.description.substring(0, 100) + '...' : 'N/A'}</p>
-                  <div class="info-gallery">${galleryHtml}</div>
+                  <p><strong>Print Price:</strong> $${displayPrice}</p>
+                  <p><strong>Description:</strong> ${game.description || 'N/A'}</p>
                 </div>
               </div>
+              ${galleryHtml}
             </div>
 
             <!-- Edit Request Form -->
@@ -1028,9 +1101,103 @@
       }
     }
 
-    // Modals
+    // Game Shop History Flow
+    async function loadShopPrintHistory(storeEmail) {
+      const container = document.getElementById('shopPrintLogs');
+      
+      const { data, error } = await supabaseClient
+        .from('print_logs')
+        .select('*')
+        .eq('store_email', storeEmail)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        container.innerHTML = '<p class="empty-msg">Error loading your shop print history.</p>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p class="empty-msg">No kiosk prints recorded yet.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      data.forEach(log => {
+        const dateObj = new Date(log.created_at);
+        const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+        const formattedDate = dateObj.toLocaleDateString(undefined, options);
+
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.innerHTML = `
+          <div style="font-size: 12px; color: #555; font-weight: 600;">${formattedDate}</div>
+          <div style="font-size: 15px; font-weight: 800; color: #111; margin-top: 4px;">${log.game_title}</div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Gamer Wishlist Functions
+    function renderWishlist(wishlistStr) {
+      const container = document.getElementById('dashWishlist');
+      container.innerHTML = '';
+      const items = wishlistStr ? wishlistStr.split(', ').filter(Boolean) : [];
+
+      if (items.length === 0) {
+        container.innerHTML = '<p class="empty-msg">No items in wishlist yet.</p>';
+        return;
+      }
+
+      items.forEach(item => {
+        const tag = document.createElement('div');
+        tag.className = 'wishlist-tag';
+        tag.innerHTML = `
+          <span>${item}</span>
+          <button onclick="removeFromWishlist('${item.replace(/'/g, "\\'")}')" title="Remove">&times;</button>
+        `;
+        container.appendChild(tag);
+      });
+    }
+
+    async function removeFromWishlist(itemToRemove) {
+      if (!currentUser) return;
+      let items = currentUser.wishlist ? currentUser.wishlist.split(', ').filter(Boolean) : [];
+      items = items.filter(i => i !== itemToRemove);
+      const newWishlistStr = items.join(', ');
+
+      const { error } = await supabaseClient.from('users').update({ wishlist: newWishlistStr }).eq('id', currentUser.id);
+      if (!error) {
+        currentUser.wishlist = newWishlistStr;
+        renderWishlist(newWishlistStr);
+      }
+    }
+
+    // Modals & Reset PIN
     function openAddGameModal() { document.getElementById('addGameModal').classList.add('active'); }
     function closeAddGameModal() { document.getElementById('addGameModal').classList.remove('active'); }
+    
+    function openResetModal() { document.getElementById('resetModal').classList.add('active'); }
+    function closeResetModal() { document.getElementById('resetModal').classList.remove('active'); }
+
+    async function handlePinReset(e) {
+      e.preventDefault();
+      const statusDiv = document.getElementById('resetStatus');
+      const email = document.getElementById('resetEmail').value.trim().toLowerCase();
+      const newPin = document.getElementById('resetNewPin').value.trim();
+
+      statusDiv.textContent = 'Checking account...'; statusDiv.style.color = '#333';
+
+      const { data, error: fetchErr } = await supabaseClient.from('users').select('*').eq('email', email).eq('account_type', selectedRole).maybeSingle();
+      if (fetchErr || !data) { statusDiv.textContent = 'Email not found for this account type.'; statusDiv.style.color = '#d9534f'; return; }
+
+      const { error: updateErr } = await supabaseClient.from('users').update({ pin: newPin }).eq('id', data.id);
+      if (updateErr) {
+        statusDiv.textContent = 'Failed to update PIN.'; statusDiv.style.color = '#d9534f';
+      } else {
+        statusDiv.textContent = 'PIN updated successfully!'; statusDiv.style.color = '#2e7d32';
+        setTimeout(() => closeResetModal(), 1800);
+      }
+    }
 
     function logout() {
       currentUser = null; devUpsells = [];
@@ -1041,4 +1208,3 @@
   </script>
 </body>
 </html>
-
