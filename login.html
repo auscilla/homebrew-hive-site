@@ -993,30 +993,38 @@
       }
     }
 
-    // Gamer Purchases Section
+    // Gamer Purchases Section (Direct from print_logs)
     async function loadGamerPurchases(email) {
       const container = document.getElementById('gamerPurchasesList');
       const client = getSupabase();
       if (!client) return;
 
-      // Query print_logs matching the gamer's email
+      // Fetch all print logs safely
       const { data: logs, error } = await client
         .from('print_logs')
-        .select('*')
-        .or(`customer_email.eq.${email},gamer_email.eq.${email},email.eq.${email}`)
-        .order('created_at', { ascending: false });
+        .select('*');
 
-      if (error || !logs || logs.length === 0) {
+      if (error) {
+        console.error("Print logs error:", error);
+        container.innerHTML = '<p class="empty-msg">Error loading purchases catalog.</p>';
+        return;
+      }
+
+      // Filter in JS to support any email column name without throwing PostgREST 400 errors
+      const userLogs = (logs || []).filter(l => 
+        (l.store_email && l.store_email.toLowerCase() === email.toLowerCase()) ||
+        (l.customer_email && l.customer_email.toLowerCase() === email.toLowerCase()) ||
+        (l.gamer_email && l.gamer_email.toLowerCase() === email.toLowerCase()) ||
+        (l.email && l.email.toLowerCase() === email.toLowerCase())
+      );
+
+      if (userLogs.length === 0) {
         container.innerHTML = '<p class="empty-msg">No purchased games recorded for this account yet.</p>';
         return;
       }
 
       // Deduplicate game titles
-      const uniqueTitles = [...new Set(logs.map(l => l.game_title).filter(Boolean))];
-      if (uniqueTitles.length === 0) {
-        container.innerHTML = '<p class="empty-msg">No purchased games recorded for this account yet.</p>';
-        return;
-      }
+      const uniqueTitles = [...new Set(userLogs.map(l => l.game_title).filter(Boolean))];
 
       // Fetch game details (image, etc.)
       const { data: allGames } = await client.from('games').select('*').in('title', uniqueTitles);
