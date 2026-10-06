@@ -246,7 +246,19 @@
     .dashboard p.sub-text {
       color: #555;
       font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .dev-notice-text {
+      color: #d9534f;
+      font-size: 12.5px;
+      font-weight: 600;
+      line-height: 1.4;
       margin-bottom: 20px;
+      background: #fdf2f2;
+      padding: 10px 12px;
+      border-left: 3px solid #d9534f;
+      border-radius: 4px;
     }
 
     .info-card {
@@ -404,6 +416,20 @@
 
     .gallery-img:hover {
       transform: scale(1.1);
+    }
+
+    .video-preview-box {
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    .video-preview-box iframe, .video-preview-box video {
+      width: 100%;
+      max-width: 440px;
+      height: 240px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: #000;
     }
 
     /* Upsells Section */
@@ -665,6 +691,9 @@
   <div class="auth-container dashboard" id="dashboardBox">
     <h2 id="dashEmail">Welcome!</h2>
     <p class="sub-text" id="dashRole">Account Type: Gamer</p>
+    <div id="devNoticeBox" class="dev-notice-text" style="display: none;">
+      Note: To maintain kiosk system stability, all updates are submitted as edit requests and reviewed by our team within 48 business hours. You can archive your game at any time to instantly hide it from all kiosks.
+    </div>
 
     <!-- Gamer View -->
     <div id="gamerSection">
@@ -798,6 +827,26 @@
       return cleanUrl;
     }
 
+    // Helper: Video Embed Formatter
+    function formatVideoEmbed(url) {
+      if (!url) return '';
+      const cleanUrl = url.trim();
+      
+      // Check YouTube
+      const ytMatch = cleanUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      if (ytMatch && ytMatch[1]) {
+        return `<div class="video-preview-box"><iframe src="https://www.youtube.com/embed/${ytMatch[1]}" allowfullscreen></iframe></div>`;
+      }
+      
+      // Check HTML5 Video file
+      if (cleanUrl.match(/\.(mp4|webm|ogg)($|\?)/i)) {
+        return `<div class="video-preview-box"><video controls><source src="${cleanUrl}"></video></div>`;
+      }
+
+      // Default Link
+      return `<div style="margin-top:8px;"><a href="${cleanUrl}" target="_blank" style="color:#111; font-weight:bold; font-size:13px; text-decoration:underline;">▶ Watch Game Video Preview</a></div>`;
+    }
+
     // Lightbox Functionality
     function openLightbox(url) {
       document.getElementById('lightboxImg').src = url;
@@ -879,21 +928,25 @@
       const gamerSec = document.getElementById('gamerSection');
       const devSec = document.getElementById('devSection');
       const shopSec = document.getElementById('shopSection');
+      const devNotice = document.getElementById('devNoticeBox');
 
       if (user.account_type === 'dev') {
         document.getElementById('dashRole').textContent = 'Account Type: Game Developer';
+        devNotice.style.display = 'block';
         gamerSec.style.display = 'none';
         shopSec.style.display = 'none';
         devSec.style.display = 'block';
         loadDeveloperGames(user.email);
       } else if (user.account_type === 'store') {
         document.getElementById('dashRole').textContent = 'Account Type: Game Shop / Retailer';
+        devNotice.style.display = 'none';
         gamerSec.style.display = 'none';
         devSec.style.display = 'none';
         shopSec.style.display = 'block';
         loadShopPrintHistory(user.email);
       } else {
         document.getElementById('dashRole').textContent = 'Account Type: Gamer';
+        devNotice.style.display = 'none';
         devSec.style.display = 'none';
         shopSec.style.display = 'none';
         gamerSec.style.display = 'block';
@@ -952,6 +1005,15 @@
           </div>
         ` : '';
 
+        // Video Section
+        const videoUrl = game.video_url || game.video || game.trailer_url;
+        let videoHtml = videoUrl ? `
+          <div class="info-gallery-container">
+            <p>Video Preview:</p>
+            ${formatVideoEmbed(videoUrl)}
+          </div>
+        ` : '';
+
         // Parse Upsells for this game
         let gameUpsells = devUpsells.filter(u => u.game_title === game.title);
         let upsellsHtml = gameUpsells.length > 0 ? gameUpsells.map(u => `
@@ -994,6 +1056,7 @@
                 </div>
               </div>
               ${galleryHtml}
+              ${videoHtml}
             </div>
 
             <form onsubmit="submitEditRequest(event, '${safeTitle}', ${index})">
@@ -1239,6 +1302,7 @@
       currentUser = null; devUpsells = [];
       document.getElementById('authBox').style.display = 'block';
       document.getElementById('dashboardBox').style.display = 'none';
+      document.getElementById('devNoticeBox').style.display = 'none';
       document.getElementById('authForm').reset();
     }
   </script>
