@@ -966,7 +966,7 @@
         // Archive / Publish Button Logic
         let toggleArchiveBtn = '';
         if (statusText.toLowerCase() === 'archived') {
-          toggleArchiveBtn = `<button type="button" class="submit-btn btn-publish" onclick="toggleArchiveStatus('${game.id}', 'Archived')">Publish Game (Send to Pending)</button>`;
+          toggleArchiveBtn = `<button type="button" class="submit-btn btn-publish" onclick="toggleArchiveStatus('${game.id}', 'Archived')">Resubmit Game for Approval</button>`;
         } else {
           toggleArchiveBtn = `<button type="button" class="submit-btn btn-archive" onclick="toggleArchiveStatus('${game.id}', '${statusText}')">Archive Game (Hide from Kiosk)</button>`;
         }
