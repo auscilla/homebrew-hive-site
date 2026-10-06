@@ -597,13 +597,13 @@
 <body>
 
   <!-- Menu Trigger Button -->
-  <button class="menu-btn" id="openMenu">MENU</button>
+  <button type="button" class="menu-btn" id="openMenu">MENU</button>
 
   <!-- Navigation Drawer -->
   <div class="drawer" id="drawer">
     <div class="drawer-header">
       <span>MENU</span>
-      <button class="close-btn" id="closeMenu">&times;</button>
+      <button type="button" class="close-btn" id="closeMenu">&times;</button>
     </div>
     <nav class="nav-links">
       <a href="index.html">HOME</a>
@@ -629,9 +629,9 @@
     
     <!-- Role Selector -->
     <div class="role-toggle">
-      <button class="role-btn active" id="gamerRoleBtn" onclick="setRole('gamer')">GAMER</button>
-      <button class="role-btn" id="devRoleBtn" onclick="setRole('dev')">GAME DEV</button>
-      <button class="role-btn" id="shopRoleBtn" onclick="setRole('store')">GAME SHOP</button>
+      <button type="button" class="role-btn active" id="gamerRoleBtn" onclick="setRole('gamer')">GAMER</button>
+      <button type="button" class="role-btn" id="devRoleBtn" onclick="setRole('dev')">GAME DEV</button>
+      <button type="button" class="role-btn" id="shopRoleBtn" onclick="setRole('store')">GAME SHOP</button>
     </div>
 
     <h2 class="auth-title" id="formTitle">Gamer Login</h2>
@@ -681,7 +681,7 @@
           <p class="empty-msg">Loading submitted games...</p>
         </div>
       </div>
-      <button class="add-game-btn" onclick="openAddGameModal()">+ Add New Game</button>
+      <button type="button" class="add-game-btn" onclick="openAddGameModal()">+ Add New Game</button>
     </div>
 
     <!-- Game Shop View -->
@@ -694,7 +694,7 @@
       </div>
     </div>
 
-    <button class="logout-btn" onclick="logout()">Log Out</button>
+    <button type="button" class="logout-btn" onclick="logout()">Log Out</button>
   </div>
 
   <!-- Modals (Add Game & Reset PIN) -->
@@ -702,7 +702,7 @@
     <div class="modal-box">
       <div class="modal-header">
         <h3>Submit New Game</h3>
-        <button class="modal-close" onclick="closeAddGameModal()">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAddGameModal()">&times;</button>
       </div>
       <form id="addGameForm" onsubmit="handleGameSubmission(event)">
         <div class="form-group">
@@ -736,7 +736,7 @@
     <div class="modal-box">
       <div class="modal-header">
         <h3 id="resetModalTitle">Reset PIN</h3>
-        <button class="modal-close" onclick="closeResetModal()">&times;</button>
+        <button type="button" class="modal-close" onclick="closeResetModal()">&times;</button>
       </div>
       <form id="resetPinForm" onsubmit="handlePinReset(event)">
         <div class="form-group">
@@ -766,15 +766,23 @@
     closeMenuBtn.addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
 
-    // 2. Supabase Initialization
+    // 2. Supabase Safe Client Getter
     const SUPABASE_URL = 'https://tskbfytfjsiavwysecuk.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_I27CpcilWluOjUSSb6y_pQ_t9ylEjmB';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    function getSupabase() {
+      if (window.supabaseClient) return window.supabaseClient;
+      if (typeof supabase !== 'undefined' && supabase.createClient) {
+        window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        return window.supabaseClient;
+      }
+      return null;
+    }
 
     let selectedRole = 'gamer'; 
     let isSignUp = false;
     let currentUser = null;
-    let devUpsells = []; // Store up-sells globally for the session
+    let devUpsells = [];
 
     // Helper: URL Formatter
     function formatImageUrl(url) {
@@ -835,6 +843,12 @@
 
     async function handleSubmit(e) {
       e.preventDefault();
+      const client = getSupabase();
+      if (!client) {
+        document.getElementById('errorMsg').textContent = 'Database connection loading. Please try again.';
+        return;
+      }
+
       const email = document.getElementById('email').value.trim().toLowerCase();
       const pin = document.getElementById('pin').value.trim();
       const errorMsg = document.getElementById('errorMsg');
@@ -844,12 +858,12 @@
       }
 
       if (isSignUp) {
-        const { data, error } = await supabaseClient.from('users').insert([{ email, pin, account_type: selectedRole }]).select();
+        const { data, error } = await client.from('users').insert([{ email, pin, account_type: selectedRole }]).select();
         if (error) { errorMsg.textContent = 'Error creating account. Email may exist.'; return; }
         currentUser = data[0];
         showDashboard(currentUser);
       } else {
-        const { data, error } = await supabaseClient.from('users').select('*').eq('email', email).eq('pin', pin).eq('account_type', selectedRole).single();
+        const { data, error } = await client.from('users').select('*').eq('email', email).eq('pin', pin).eq('account_type', selectedRole).single();
         if (error || !data) { errorMsg.textContent = 'Invalid email or 4-digit PIN.'; return; }
         currentUser = data;
         showDashboard(currentUser);
@@ -889,12 +903,11 @@
     // Developer View: Games & Up-Sells
     async function loadDeveloperGames(email) {
       const container = document.getElementById('devGamesList');
-      
-      // Fetch Games
-      const { data: games, error: gameErr } = await supabaseClient.from('games').select('*').eq('developer_email', email);
-      
-      // Fetch Up-Sells
-      const { data: upsells, error: upErr } = await supabaseClient.from('game_upsells').select('*').eq('developer_email', email);
+      const client = getSupabase();
+      if (!client) return;
+
+      const { data: games, error: gameErr } = await client.from('games').select('*').eq('developer_email', email);
+      const { data: upsells } = await client.from('game_upsells').select('*').eq('developer_email', email);
       devUpsells = upsells || [];
 
       if (gameErr) {
@@ -917,8 +930,6 @@
         }
 
         const mainImg = formatImageUrl(game.cartridge_image_url || game.image_url);
-        
-        // Ensure price formatting is correct (remove any existing $ symbol from database)
         const displayPrice = String(game.price || '0.00').replace('$', '');
 
         // Parse Gallery Images
@@ -948,7 +959,7 @@
               ${u.image_url ? `<img src="${formatImageUrl(u.image_url)}" class="upsell-img-thumb" onclick="openLightbox('${formatImageUrl(u.image_url)}')"/>` : ''}
               <strong>${u.item_type}</strong> - $${u.price} (Qty: ${u.inventory})
             </div>
-            <button class="btn-remove-upsell" onclick="deleteUpsell(${u.id})">Delete</button>
+            <button type="button" class="btn-remove-upsell" onclick="deleteUpsell(${u.id})">Delete</button>
           </div>
         `).join('') : '<p class="empty-msg" style="margin-bottom:8px;">No up-sells added yet.</p>';
 
@@ -960,17 +971,18 @@
           toggleArchiveBtn = `<button type="button" class="submit-btn btn-archive" onclick="toggleArchiveStatus('${game.id}', '${statusText}')">Archive Game (Hide from Kiosk)</button>`;
         }
 
+        const safeTitle = (game.title || '').replace(/'/g, "\\'");
+
         const item = document.createElement('div');
         item.className = 'list-item';
         item.innerHTML = `
           <div class="list-header">
             <div><span class="list-title">${game.title}</span><span class="status-badge ${badgeClass}">${badgeLabel}</span></div>
-            <button class="more-info-btn" onclick="toggleEditDropdown(${index})">Expand / Edit</button>
+            <button type="button" class="more-info-btn" onclick="toggleEditDropdown(${index})">Expand / Edit</button>
           </div>
           
           <div class="edit-dropdown" id="dropdown-${index}">
             
-            <!-- Read-Only Info Panel -->
             <div class="readonly-panel">
               <h4>Current Game Data</h4>
               <div class="info-flex">
@@ -983,8 +995,7 @@
               ${galleryHtml}
             </div>
 
-            <!-- Edit Request Form -->
-            <form onsubmit="submitEditRequest(event, '${game.title.replace(/'/g, "\\'")}', ${index})">
+            <form onsubmit="submitEditRequest(event, '${safeTitle}', ${index})">
               <div class="form-group">
                 <label>Field to Request Edit</label>
                 <select id="editField-${index}" required>
@@ -1005,12 +1016,11 @@
 
             ${toggleArchiveBtn}
 
-            <!-- Up-Sells Panel -->
             <div class="upsells-panel">
               <h4>Manage Up-Sells (Physical Merch)</h4>
               <div id="upsell-list-${index}">${upsellsHtml}</div>
               
-              <form class="add-upsell-form" onsubmit="addUpsell(event, '${game.title.replace(/'/g, "\\'")}', ${index})">
+              <form class="add-upsell-form" onsubmit="addUpsell(event, '${safeTitle}', ${index})">
                 <select id="upType-${index}" required>
                   <option value="" disabled selected>Item Type...</option>
                   <option value="Manual">Manual</option>
@@ -1038,14 +1048,16 @@
 
     // Toggle Archive / Publish
     async function toggleArchiveStatus(gameId, currentStatus) {
+      const client = getSupabase();
+      if (!client) return;
+
       const newStatus = currentStatus.toLowerCase() === 'archived' ? 'Pending' : 'Archived';
       if (!confirm(`Are you sure you want to change the status to ${newStatus}?`)) return;
 
-      const { data, error } = await supabaseClient
+      const { error } = await client
         .from('games')
         .update({ status: newStatus })
-        .eq('id', gameId)
-        .select();
+        .eq('id', gameId);
 
       if (!error) {
         loadDeveloperGames(currentUser.email);
@@ -1058,13 +1070,16 @@
     // Submit Edit Request
     async function submitEditRequest(e, gameTitle, index) {
       e.preventDefault();
+      const client = getSupabase();
+      if (!client) return;
+
       const statusDiv = document.getElementById(`status-${index}`);
       statusDiv.textContent = 'Submitting...'; statusDiv.style.color = '#333';
       
       const field = document.getElementById(`editField-${index}`).value;
       const details = document.getElementById(`editDetails-${index}`).value.trim();
 
-      const { error } = await supabaseClient.from('edit_requests').insert([{ developer_email: currentUser.email, game_title: gameTitle, field_to_edit: field, request_details: details, status: 'Pending' }]);
+      const { error } = await client.from('edit_requests').insert([{ developer_email: currentUser.email, game_title: gameTitle, field_to_edit: field, request_details: details, status: 'Pending' }]);
       if (error) {
         statusDiv.textContent = 'Failed to send request.'; statusDiv.style.color = '#d9534f';
       } else {
@@ -1076,12 +1091,15 @@
     // Upsell Functions
     async function addUpsell(e, gameTitle, index) {
       e.preventDefault();
+      const client = getSupabase();
+      if (!client) return;
+
       const type = document.getElementById(`upType-${index}`).value;
       const price = document.getElementById(`upPrice-${index}`).value;
       const inv = document.getElementById(`upInv-${index}`).value;
       const img = document.getElementById(`upImg-${index}`).value;
 
-      const { error } = await supabaseClient.from('game_upsells').insert([{
+      const { error } = await client.from('game_upsells').insert([{
         game_title: gameTitle,
         developer_email: currentUser.email,
         item_type: type,
@@ -1091,7 +1109,7 @@
       }]);
 
       if (!error) {
-        loadDeveloperGames(currentUser.email); // Reload visual list
+        loadDeveloperGames(currentUser.email);
       } else {
         alert("Error adding up-sell.");
       }
@@ -1099,7 +1117,10 @@
 
     async function deleteUpsell(upsellId) {
       if (!confirm("Remove this up-sell item?")) return;
-      const { error } = await supabaseClient.from('game_upsells').delete().eq('id', upsellId);
+      const client = getSupabase();
+      if (!client) return;
+
+      const { error } = await client.from('game_upsells').delete().eq('id', upsellId);
       if (!error) {
         loadDeveloperGames(currentUser.email);
       } else {
@@ -1110,8 +1131,10 @@
     // Game Shop History Flow
     async function loadShopPrintHistory(storeEmail) {
       const container = document.getElementById('shopPrintLogs');
+      const client = getSupabase();
+      if (!client) return;
       
-      const { data, error } = await supabaseClient
+      const { data, error } = await client
         .from('print_logs')
         .select('*')
         .eq('store_email', storeEmail)
@@ -1131,4 +1154,92 @@
       data.forEach(log => {
         const dateObj = new Date(log.created_at);
         const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
-        const formattedDate = dateObj
+        const formattedDate = dateObj.toLocaleDateString(undefined, options);
+
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.innerHTML = `
+          <div style="font-size: 12px; color: #555; font-weight: 600;">${formattedDate}</div>
+          <div style="font-size: 15px; font-weight: 800; color: #111; margin-top: 4px;">${log.game_title}</div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Gamer Wishlist Functions
+    function renderWishlist(wishlistStr) {
+      const container = document.getElementById('dashWishlist');
+      container.innerHTML = '';
+      const items = wishlistStr ? wishlistStr.split(', ').filter(Boolean) : [];
+
+      if (items.length === 0) {
+        container.innerHTML = '<p class="empty-msg">No items in wishlist yet.</p>';
+        return;
+      }
+
+      items.forEach(item => {
+        const tag = document.createElement('div');
+        tag.className = 'wishlist-tag';
+        tag.innerHTML = `
+          <span>${item}</span>
+          <button type="button" onclick="removeFromWishlist('${item.replace(/'/g, "\\'")}')" title="Remove">&times;</button>
+        `;
+        container.appendChild(tag);
+      });
+    }
+
+    async function removeFromWishlist(itemToRemove) {
+      if (!currentUser) return;
+      const client = getSupabase();
+      if (!client) return;
+
+      let items = currentUser.wishlist ? currentUser.wishlist.split(', ').filter(Boolean) : [];
+      items = items.filter(i => i !== itemToRemove);
+      const newWishlistStr = items.join(', ');
+
+      const { error } = await client.from('users').update({ wishlist: newWishlistStr }).eq('id', currentUser.id);
+      if (!error) {
+        currentUser.wishlist = newWishlistStr;
+        renderWishlist(newWishlistStr);
+      }
+    }
+
+    // Modals & Reset PIN
+    function openAddGameModal() { document.getElementById('addGameModal').classList.add('active'); }
+    function closeAddGameModal() { document.getElementById('addGameModal').classList.remove('active'); }
+    
+    function openResetModal() { document.getElementById('resetModal').classList.add('active'); }
+    function closeResetModal() { document.getElementById('resetModal').classList.remove('active'); }
+
+    async function handlePinReset(e) {
+      e.preventDefault();
+      const client = getSupabase();
+      if (!client) return;
+
+      const statusDiv = document.getElementById('resetStatus');
+      const email = document.getElementById('resetEmail').value.trim().toLowerCase();
+      const newPin = document.getElementById('resetNewPin').value.trim();
+
+      statusDiv.textContent = 'Checking account...'; statusDiv.style.color = '#333';
+
+      const { data, error: fetchErr } = await client.from('users').select('*').eq('email', email).eq('account_type', selectedRole).maybeSingle();
+      if (fetchErr || !data) { statusDiv.textContent = 'Email not found for this account type.'; statusDiv.style.color = '#d9534f'; return; }
+
+      const { error: updateErr } = await client.from('users').update({ pin: newPin }).eq('id', data.id);
+      if (updateErr) {
+        statusDiv.textContent = 'Failed to update PIN.'; statusDiv.style.color = '#d9534f';
+      } else {
+        statusDiv.textContent = 'PIN updated successfully!'; statusDiv.style.color = '#2e7d32';
+        setTimeout(() => closeResetModal(), 1800);
+      }
+    }
+
+    function logout() {
+      currentUser = null; devUpsells = [];
+      document.getElementById('authBox').style.display = 'block';
+      document.getElementById('dashboardBox').style.display = 'none';
+      document.getElementById('authForm').reset();
+    }
+  </script>
+</body>
+</html>
