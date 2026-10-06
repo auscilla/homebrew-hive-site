@@ -280,7 +280,35 @@
       align-items: center;
     }
 
-    /* Developer Game List Items */
+    .wishlist-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .wishlist-tag {
+      background: #111;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .wishlist-tag button {
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    /* Developer / Gamer Game List Items */
     .list-item {
       background: #ffffff;
       border: 1.5px solid #111;
@@ -525,6 +553,12 @@
 
     .add-game-btn:hover { background: #e6b800; }
 
+    .empty-msg {
+      font-size: 13px;
+      color: #777;
+      font-style: italic;
+    }
+
     /* Lightbox Modal for Images */
     .lightbox-modal {
       position: fixed;
@@ -701,6 +735,13 @@
         <h3>Wishlist</h3>
         <div id="dashWishlist" class="wishlist-tags"></div>
       </div>
+
+      <div class="info-card" style="margin-top: 20px;">
+        <h3>Your Purchased Games</h3>
+        <div id="gamerPurchasesList">
+          <p class="empty-msg">Loading purchases...</p>
+        </div>
+      </div>
     </div>
 
     <!-- Game Developer View -->
@@ -832,18 +873,15 @@
       if (!url) return '';
       const cleanUrl = url.trim();
       
-      // Check YouTube
       const ytMatch = cleanUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
       if (ytMatch && ytMatch[1]) {
         return `<div class="video-preview-box"><iframe src="https://www.youtube.com/embed/${ytMatch[1]}" allowfullscreen></iframe></div>`;
       }
       
-      // Check HTML5 Video file
       if (cleanUrl.match(/\.(mp4|webm|ogg)($|\?)/i)) {
         return `<div class="video-preview-box"><video controls><source src="${cleanUrl}"></video></div>`;
       }
 
-      // Default Link
       return `<div style="margin-top:8px;"><a href="${cleanUrl}" target="_blank" style="color:#111; font-weight:bold; font-size:13px; text-decoration:underline;">▶ Watch Game Video Preview</a></div>`;
     }
 
@@ -951,7 +989,88 @@
         shopSec.style.display = 'none';
         gamerSec.style.display = 'block';
         renderWishlist(user.wishlist);
+        loadGamerPurchases(user.email);
       }
+    }
+
+    // Gamer Purchases Section
+    async function loadGamerPurchases(email) {
+      const container = document.getElementById('gamerPurchasesList');
+      const client = getSupabase();
+      if (!client) return;
+
+      // Query print_logs matching the gamer's email
+      const { data: logs, error } = await client
+        .from('print_logs')
+        .select('*')
+        .or(`customer_email.eq.${email},gamer_email.eq.${email},email.eq.${email}`)
+        .order('created_at', { ascending: false });
+
+      if (error || !logs || logs.length === 0) {
+        container.innerHTML = '<p class="empty-msg">No purchased games recorded for this account yet.</p>';
+        return;
+      }
+
+      // Deduplicate game titles
+      const uniqueTitles = [...new Set(logs.map(l => l.game_title).filter(Boolean))];
+      if (uniqueTitles.length === 0) {
+        container.innerHTML = '<p class="empty-msg">No purchased games recorded for this account yet.</p>';
+        return;
+      }
+
+      // Fetch game details (image, etc.)
+      const { data: allGames } = await client.from('games').select('*').in('title', uniqueTitles);
+      const gamesMap = {};
+      if (allGames) {
+        allGames.forEach(g => { gamesMap[g.title] = g; });
+      }
+
+      // Fetch upsells available for these games
+      const { data: allUpsells } = await client.from('game_upsells').select('*').in('game_title', uniqueTitles);
+
+      container.innerHTML = '';
+      uniqueTitles.forEach(title => {
+        const game = gamesMap[title] || {};
+        const mainImg = formatImageUrl(game.cartridge_image_url || game.image_url || '');
+        const gameUpsells = (allUpsells || []).filter(u => u.game_title === title);
+
+        let upsellsHtml = gameUpsells.length > 0 ? gameUpsells.map(u => `
+          <div class="upsell-item" style="margin-top: 6px;">
+            <div style="display: flex; align-items: center;">
+              ${u.image_url ? `<img src="${formatImageUrl(u.image_url)}" class="upsell-img-thumb" onclick="openLightbox('${formatImageUrl(u.image_url)}')"/>` : ''}
+              <span><strong>${u.item_type}</strong> - $${u.price}</span>
+            </div>
+            <button type="button" class="more-info-btn" style="background:#2e7d32; font-size:11px; padding:4px 8px;" onclick="orderUpsell('${u.item_type}', '${title.replace(/'/g, "\\'")}', ${u.price})">Buy Item</button>
+          </div>
+        `).join('') : '<p class="empty-msg" style="font-size:12px; margin-top:6px;">No up-sells available for this title yet.</p>';
+
+        const card = document.createElement('div');
+        card.className = 'list-item';
+        card.style.marginBottom = '14px';
+        card.innerHTML = `
+          <div class="info-flex" style="align-items: center; gap: 14px;">
+            ${mainImg ? `<img src="${mainImg}" class="info-thumb" onclick="openLightbox('${mainImg}')" style="width:70px; height:70px;" />` : '<div style="width:70px; height:70px; background:#eee; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:22px;">🎮</div>'}
+            <div style="flex: 1;">
+              <h4 style="font-size: 16px; font-weight: 800; color: #111;">${title}</h4>
+              <button type="button" class="more-info-btn" style="margin-top: 8px; font-size: 11px; padding: 6px 10px; background:#111;" onclick="requestReplacementLabel('${title.replace(/'/g, "\\'")}')">🏷️ Order Replacement Label ($2.99)</button>
+            </div>
+          </div>
+          
+          <div style="margin-top: 14px; padding-top: 10px; border-top: 1px dashed #ddd;">
+            <strong style="font-size: 12px; text-transform: uppercase; color: #555;">Available Merch & Up-Sells:</strong>
+            ${upsellsHtml}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function requestReplacementLabel(gameTitle) {
+      alert(`Replacement cartridge label request for "${gameTitle}" received! We will email you at ${currentUser.email} with payment & shipping instructions.`);
+    }
+
+    function orderUpsell(itemType, gameTitle, price) {
+      alert(`Order request placed for ${gameTitle} (${itemType} - $${price})! Check your email (${currentUser.email}) for checkout details.`);
     }
 
     // Developer View: Games & Up-Sells
