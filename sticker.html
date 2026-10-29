@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Free Game Sticker | Homebrew Hive</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico?v=2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f7f7f7;
+      color: #111;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .menu-btn {
+      position: absolute;
+      top: 24px;
+      left: 32px;
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      color: #333;
+      cursor: pointer;
+      z-index: 10;
+      padding: 8px 0;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 320px;
+      height: 100%;
+      background-color: #111111;
+      color: #ffffff;
+      z-index: 100;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+    }
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .drawer-header span {
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 8px;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .nav-links a {
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 28px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: opacity 0.2s;
+      font-family: 'Impact', 'Arial Black', sans-serif;
+    }
+
+    .nav-links a:hover {
+      opacity: 0.7;
+    }
+
+    .backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.2);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .card {
+      max-width: 520px;
+      width: 92%;
+      margin: 80px auto 40px;
+      background: #ffffff;
+      padding: 32px 28px;
+      border: 2px solid #111;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .page-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .page-sub {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 24px;
+      line-height: 1.45;
+    }
+
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border: 2px solid #111;
+      border-radius: 4px;
+      font-size: 16px;
+      outline: none;
+      font-family: inherit;
+      background: #fff;
+      color: #111;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 72px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px;
+      background: #111;
+      color: #fff;
+      border: none;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: background 0.2s ease;
+    }
+
+    .choices .submit-btn {
+      margin-top: 0;
+    }
+
+    .submit-btn:hover {
+      background: #333;
+    }
+
+    .submit-btn:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+
+    .back-btn {
+      display: inline-block;
+      background: none;
+      border: none;
+      color: #333;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 8px 0;
+      margin-bottom: 16px;
+    }
+
+    .back-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .result-text {
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1.4;
+      text-align: left;
+      text-transform: none;
+      letter-spacing: 0;
+      margin-bottom: 18px;
+      overflow-wrap: anywhere;
+    }
+
+    .fine-print {
+      font-size: 13px;
+      color: #555;
+      text-align: left;
+      line-height: 1.45;
+      margin: 0 0 14px;
+    }
+
+    .status-msg {
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 12px;
+      text-align: left;
+      color: #d9534f;
+      overflow-wrap: anywhere;
+    }
+
+    .screen {
+      text-align: left;
+    }
+
+    .screen .submit-btn {
+      margin-top: 6px;
+    }
+
+    /* Off-screen honeypot. Do not use display:none. */
+    .hp-field {
+      position: absolute;
+      left: -10000px;
+      top: 0;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+
+    :focus-visible {
+      outline: 3px solid #111;
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .drawer,
+      .backdrop,
+      .submit-btn,
+      .nav-links a {
+        transition: none;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .menu-btn {
+        top: 16px;
+        left: 20px;
+      }
+
+      .drawer {
+        width: 85vw;
+        padding: 20px 24px;
+      }
+
+      .nav-links a {
+        font-size: 24px;
+      }
+
+      .card {
+        margin-top: 72px;
+        padding: 24px 16px;
+      }
+
+      .page-title {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="menu-btn" id="openMenu" type="button" aria-expanded="false" aria-controls="drawer">MENU</button>
+
+  <div class="drawer" id="drawer" inert>
+    <div class="drawer-header">
+      <span>MENU</span>
+      <button class="close-btn" id="closeMenu" type="button" aria-label="Close menu">&times;</button>
+    </div>
+    <nav class="nav-links" aria-label="Main">
+      <a href="index.html">HOME</a>
+      <a href="how-it-works.html">HOW IT WORKS</a>
+      <a href="games.html">GAMES</a>
+      <a href="login.html">LOGIN</a>
+      <a href="find-us.html">FIND US</a>
+      <a href="request-us.html">REQUEST US</a>
+      <a href="contact-us.html">CONTACT US</a>
+    </nav>
+  </div>
+
+  <div class="backdrop" id="backdrop"></div>
+
+  <main class="card">
+    <h1 class="page-title">Free game sticker!</h1>
+
+    <section id="screen-start">
+      <p class="page-sub">Bought a Homebrew Hive cart? We'll mail you a sticker of your game, free.</p>
+      <div class="choices">
+        <button type="button" class="submit-btn" id="choose-shop">I bought it at a shop</button>
+        <button type="button" class="submit-btn" id="choose-email">I have my kiosk email</button>
+      </div>
+    </section>
+
+    <section id="screen-shop" class="screen" hidden>
+      <button type="button" class="back-btn" id="shop-back">Back</button>
+      <form id="shop-form" method="post" action="sticker.html" novalidate onsubmit="return false">
+        <div class="form-group">
+          <label for="game">Which game did you get?</label>
+          <select id="game" name="game" required>
+            <option value="">Loading games…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="shop">Where did you buy it?</label>
+          <select id="shop" name="shop" required>
+            <option value="">Loading shops…</option>
+            <option value="not_listed">My shop isn't listed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="bought-on">About when?</label>
+          <input type="date" id="bought-on" name="bought_on" required autocomplete="off" />
+        </div>
+        <button type="submit" class="submit-btn" id="shop-check">Check my cart</button>
+        <p id="shop-status" class="status-msg" role="alert"></p>
+      </form>
+    </section>
+
+    <section id="screen-email" class="screen" hidden>
+      <button type="button" class="back-btn" id="email-back">Back</button>
+      <form id="email-form" method="post" action="sticker.html" novalidate onsubmit="return false">
+        <div class="form-group">
+          <label for="kiosk-email">Enter the email you gave at the kiosk.</label>
+          <input type="email" id="kiosk-email" name="kiosk_email" autocomplete="email" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="200" required />
+        </div>
+        <button type="submit" class="submit-btn" id="email-check">Check</button>
+        <p id="email-status" class="status-msg" role="alert"></p>
+      </form>
+    </section>
+
+    <section id="screen-result" class="screen" hidden>
+      <button type="button" class="back-btn" id="result-back">Back</button>
+      <h2 id="result-text" class="result-text" tabindex="-1"></h2>
+      <form id="address-form" method="post" action="sticker.html" novalidate onsubmit="return false">
+        <div class="form-group" id="note-group" hidden>
+          <label for="note" id="note-label"></label>
+          <textarea id="note" name="note" maxlength="1000" rows="3"></textarea>
+        </div>
+
+        <div class="hp-field" aria-hidden="true">
+          <label for="website">Website</label>
+          <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" autocapitalize="off" spellcheck="false" />
+        </div>
+
+        <div class="form-group">
+          <label for="mail-name">Name</label>
+          <input type="text" id="mail-name" name="name" autocomplete="name" autocapitalize="words" maxlength="120" required />
+        </div>
+        <div class="form-group">
+          <label for="mail-street">Street</label>
+          <input type="text" id="mail-street" name="street" autocomplete="address-line1" maxlength="200" required />
+        </div>
+        <div class="form-group">
+          <label for="mail-apt">Apt</label>
+          <input type="text" id="mail-apt" name="apt" autocomplete="address-line2" maxlength="60" />
+        </div>
+        <div class="form-group">
+          <label for="mail-city">City</label>
+          <input type="text" id="mail-city" name="city" autocomplete="address-level2" maxlength="100" required />
+        </div>
+        <div class="form-group">
+          <label for="mail-state">State</label>
+          <select id="mail-state" name="state" autocomplete="address-level1" required>
+            <option value="">Select a state</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="mail-zip">ZIP</label>
+          <input type="text" id="mail-zip" name="zip" autocomplete="postal-code" inputmode="text" maxlength="10" placeholder="12345 or 12345-6789" required />
+        </div>
+        <div class="form-group">
+          <label for="mail-email">Email</label>
+          <input type="email" id="mail-email" name="email" autocomplete="email" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="200" required />
+        </div>
+
+        <p class="fine-print" id="address-note"></p>
+        <p class="fine-print">US only.</p>
+        <button type="submit" class="submit-btn" id="send-btn">Send my sticker</button>
+        <p id="submit-status" class="status-msg" role="alert"></p>
+      </form>
+    </section>
+
+    <section id="screen-done" class="screen" hidden>
+      <h2 id="done-text" class="result-text" tabindex="-1"></h2>
+    </section>
+
+    <noscript>
+      <p class="status-msg">This page needs JavaScript to check your cart.</p>
+    </noscript>
+  </main>
+
+  <script>
+    (function () {
+      /* ============================================================
+         RESULT COPY
+         Every sticker_check / sticker_submit outcome string is here.
+         Edit one line at a time.
+         MATCH keeps the [game] and [shop] tokens.
+         ============================================================ */
+      const RESULT_COPY = Object.freeze({
+        MATCH: 'Found it! Your copy of [game] from [shop] qualifies. Where should we mail it?',
+        NO_MATCH: "We couldn't find that cart yet. This can happen if the shop's kiosk was offline. Send it for a quick review.",
+        ALREADY_CLAIMED: "A sticker for this cart has already been claimed. If that wasn't you, send it for review.",
+        NOTE: 'Anything that helps (receipt number, time of day).',
+        ADDRESS_NOTE: 'We use your address only to mail this sticker and delete it after it ships.',
+        RECEIVED: "You're all set! Stickers go out by regular mail about once a week (US only) and usually arrive in 1-2 weeks.",
+        BUSY: "We're getting a lot of requests right now. Please try again tomorrow.",
+        INVALID: 'Please check the fields and try again.',
+        NETWORK: 'Something went wrong. Please try again. What you typed is still here.'
+      });
+
+      const SUPABASE_URL = 'https://tskbfytfjsiavwysecuk.supabase.co';
+      const SUPABASE_KEY = 'sb_publishable_I27CpcilWluOjUSSb6y_pQ_t9ylEjmB';
+
+      const STATES = [
+        ['AL', 'Alabama'],
+        ['AK', 'Alaska'],
+        ['AZ', 'Arizona'],
+        ['AR', 'Arkansas'],
+        ['CA', 'California'],
+        ['CO', 'Colorado'],
+        ['CT', 'Connecticut'],
+        ['DE', 'Delaware'],
+        ['DC', 'District of Columbia'],
+        ['FL', 'Florida'],
+        ['GA', 'Georgia'],
+        ['HI', 'Hawaii'],
+        ['ID', 'Idaho'],
+        ['IL', 'Illinois'],
+        ['IN', 'Indiana'],
+        ['IA', 'Iowa'],
+        ['KS', 'Kansas'],
+        ['KY', 'Kentucky'],
+        ['LA', 'Louisiana'],
+        ['ME', 'Maine'],
+        ['MD', 'Maryland'],
+        ['MA', 'Massachusetts'],
+        ['MI', 'Michigan'],
+        ['MN', 'Minnesota'],
+        ['MS', 'Mississippi'],
+        ['MO', 'Missouri'],
+        ['MT', 'Montana'],
+        ['NE', 'Nebraska'],
+        ['NV', 'Nevada'],
+        ['NH', 'New Hampshire'],
+        ['NJ', 'New Jersey'],
+        ['NM', 'New Mexico'],
+        ['NY', 'New York'],
+        ['NC', 'North Carolina'],
+        ['ND', 'North Dakota'],
+        ['OH', 'Ohio'],
+        ['OK', 'Oklahoma'],
+        ['OR', 'Oregon'],
+        ['PA', 'Pennsylvania'],
+        ['RI', 'Rhode Island'],
+        ['SC', 'South Carolina'],
+        ['SD', 'South Dakota'],
+        ['TN', 'Tennessee'],
+        ['TX', 'Texas'],
+        ['UT', 'Utah'],
+        ['VT', 'Vermont'],
+        ['VA', 'Virginia'],
+        ['WA', 'Washington'],
+        ['WV', 'West Virginia'],
+        ['WI', 'Wisconsin'],
+        ['WY', 'Wyoming']
+      ];
+      const STATE_CODES = new Set(STATES.map(function (row) { return row[0]; }));
+      const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+      const ZIP_RE = /^\d{5}(-\d{4})?$/;
+
+      const openMenuBtn = document.getElementById('openMenu');
+      const closeMenuBtn = document.getElementById('closeMenu');
+      const drawer = document.getElementById('drawer');
+      const backdrop = document.getElementById('backdrop');
+      const shopForm = document.getElementById('shop-form');
+      const emailForm = document.getElementById('email-form');
+      const addressForm = document.getElementById('address-form');
+      const shopStatus = document.getElementById('shop-status');
+      const emailStatus = document.getElementById('email-status');
+      const submitStatus = document.getElementById('submit-status');
+      const shopCheckBtn = document.getElementById('shop-check');
+      const emailCheckBtn = document.getElementById('email-check');
+      const sendBtn = document.getElementById('send-btn');
+      const resultBack = document.getElementById('result-back');
+      const gameSelect = document.getElementById('game');
+      const shopSelect = document.getElementById('shop');
+      const boughtOn = document.getElementById('bought-on');
+      const noteGroup = document.getElementById('note-group');
+
+      const mainEl = document.querySelector('main');
+      let menuReturn = null;
+      let supabaseClient = null;
+      let checkSerial = 0;
+      let sending = false;
+      let pending = null;
+      let gamesProblem = '';
+      let shopsProblem = '';
+      let publishedCatalog = '';
+
+      try {
+        if (typeof supabase !== 'undefined' && supabase.createClient) {
+          supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+      } catch (err) {
+        supabaseClient = null;
+      }
+
+      function byId(id) {
+        return document.getElementById(id);
+      }
+
+      function showScreen(id) {
+        ['screen-start', 'screen-shop', 'screen-email', 'screen-result', 'screen-done'].forEach(function (sid) {
+          byId(sid).hidden = sid !== id;
+        });
+      }
+
+      function trimmed(id) {
+        return byId(id).value.trim();
+      }
+
+      function localToday() {
+        const now = new Date();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return now.getFullYear() + '-' + month + '-' + day;
+      }
+
+      function stampMaxDate() {
+        boughtOn.max = localToday();
+      }
+
+      function validBoughtOn(value) {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+        if (!match) return false;
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        const day = Number(match[3]);
+        const date = new Date(year, month - 1, day);
+        if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return false;
+        return value <= localToday();
+      }
+
+      function fillMatch(game, shop) {
+        const gameText = game || 'your game';
+        const shopText = shop || 'your shop';
+        const gameToken = '\u0000g\u0000';
+        const shopToken = '\u0000s\u0000';
+        return RESULT_COPY.MATCH
+          .replace('[game]', gameToken)
+          .replace('[shop]', shopToken)
+          .split(gameToken).join(gameText)
+          .split(shopToken).join(shopText);
+      }
+
+      function asObject(data) {
+        if (data == null) return null;
+        if (typeof data === 'string') {
+          try {
+            return JSON.parse(data);
+          } catch (err) {
+            return null;
+          }
+        }
+        if (typeof data === 'object') return data;
+        return null;
+      }
+
+      function addOption(select, value, label, before) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        if (before) select.insertBefore(option, before);
+        else select.appendChild(option);
+      }
+
+      function markInvalid(field, statusEl) {
+        field.setAttribute('aria-invalid', 'true');
+        statusEl.textContent = RESULT_COPY.INVALID;
+        field.focus();
+      }
+
+      function clearInvalid(form) {
+        form.querySelectorAll('[aria-invalid]').forEach(function (field) {
+          field.removeAttribute('aria-invalid');
+        });
+      }
+
+      function setFormBusy(form, busy) {
+        form.setAttribute('aria-busy', busy ? 'true' : 'false');
+        form.querySelectorAll('input, select, textarea, button').forEach(function (field) {
+          field.disabled = busy;
+        });
+      }
+
+      function openDrawer() {
+        menuReturn = document.activeElement;
+        drawer.inert = false;
+        mainEl.inert = true;
+        openMenuBtn.inert = true;
+        drawer.classList.add('open');
+        backdrop.classList.add('active');
+        openMenuBtn.setAttribute('aria-expanded', 'true');
+        closeMenuBtn.focus();
+      }
+
+      function closeDrawer() {
+        drawer.classList.remove('open');
+        backdrop.classList.remove('active');
+        openMenuBtn.setAttribute('aria-expanded', 'false');
+        drawer.inert = true;
+        mainEl.inert = false;
+        openMenuBtn.inert = false;
+        if (menuReturn && typeof menuReturn.focus === 'function') menuReturn.focus();
+      }
+
+      function showCatalogStatus(force) {
+        const msg = [gamesProblem, shopsProblem].filter(Boolean).join(' ');
+        if (byId('screen-shop').hidden) return;
+        if (!force && shopStatus.textContent && shopStatus.textContent !== publishedCatalog) return;
+        shopStatus.textContent = msg;
+        publishedCatalog = msg;
+      }
+
+      function openShop() {
+        checkSerial += 1;
+        setFormBusy(shopForm, false);
+        shopCheckBtn.textContent = 'Check my cart';
+        stampMaxDate();
+        showScreen('screen-shop');
+        showCatalogStatus(true);
+        gameSelect.focus();
+      }
+
+      function openEmail() {
+        checkSerial += 1;
+        setFormBusy(emailForm, false);
+        emailCheckBtn.textContent = 'Check';
+        showScreen('screen-email');
+        byId('kiosk-email').focus();
+      }
+
+      function openStart() {
+        checkSerial += 1;
+        setFormBusy(shopForm, false);
+        setFormBusy(emailForm, false);
+        shopCheckBtn.textContent = 'Check my cart';
+        emailCheckBtn.textContent = 'Check';
+        showScreen('screen-start');
+        byId('choose-shop').focus();
+      }
+
+      function selectedShopLabel() {
+        const option = shopSelect.options[shopSelect.selectedIndex];
+        if (!option || option.value === '' || option.value === 'not_listed') return '';
+        return option.textContent.trim();
+      }
+
+      function namesForMatch(payload, params) {
+        const serverGame = payload && payload.game != null ? String(payload.game).trim() : '';
+        const serverShop = payload && payload.shop != null ? String(payload.shop).trim() : '';
+        const pickedGame = params.p_game ? String(params.p_game).trim() : '';
+        return {
+          game: serverGame || pickedGame,
+          shop: serverShop || (params.shopLabel || '')
+        };
+      }
+
+      function showOutcome(code, payload, params) {
+        const names = namesForMatch(payload, params);
+        const knownReview = code === 'already_claimed';
+        const matched = code === 'match';
+        const message = matched
+          ? fillMatch(names.game, names.shop)
+          : (knownReview ? RESULT_COPY.ALREADY_CLAIMED : RESULT_COPY.NO_MATCH);
+        noteGroup.hidden = matched || knownReview;
+        byId('result-text').textContent = message;
+        submitStatus.textContent = '';
+        sendBtn.textContent = 'Send my sticker';
+        sendBtn.disabled = false;
+        resultBack.disabled = false;
+        sending = false;
+        showScreen('screen-result');
+        byId('result-text').focus();
+      }
+
+      function showDone() {
+        byId('done-text').textContent = RESULT_COPY.RECEIVED;
+        showScreen('screen-done');
+        byId('done-text').focus();
+        addressForm.reset();
+        emailForm.reset();
+        noteGroup.hidden = true;
+        pending = null;
+      }
+
+      async function loadGames() {
+        try {
+          if (!supabaseClient) throw new Error('unavailable');
+          const result = await supabaseClient
+            .from('games')
+            .select('title')
+            .or('status.eq.Approved,status.is.null');
+          if (result.error || !Array.isArray(result.data)) throw new Error('unavailable');
+          const seen = new Set();
+          const titles = [];
+          result.data.forEach(function (row) {
+            if (!row || typeof row.title !== 'string') return;
+            const title = row.title.trim();
+            const key = title.toLowerCase();
+            if (!title || seen.has(key)) return;
+            seen.add(key);
+            titles.push(title);
+          });
+          titles.sort(function (a, b) {
+            return a.localeCompare(b, 'en', { sensitivity: 'base' });
+          });
+          gameSelect.options[0].textContent = titles.length ? 'Select a game' : 'No games are listed right now';
+          titles.forEach(function (title) {
+            addOption(gameSelect, title, title);
+          });
+        } catch (err) {
+          gamesProblem = 'Failed to load games catalog.';
+          gameSelect.options[0].textContent = 'Games could not be loaded';
+          showCatalogStatus(false);
+        }
+      }
+
+      async function loadShops() {
+        const notListed = shopSelect.querySelector('option[value="not_listed"]');
+        shopSelect.options[0].textContent = 'Select a shop';
+        try {
+          if (!supabaseClient) throw new Error('unavailable');
+          const result = await supabaseClient.rpc('sticker_shop_list');
+          if (result.error || !Array.isArray(result.data)) throw new Error('unavailable');
+          const seen = new Set();
+          result.data.forEach(function (row) {
+            if (!row || typeof row.shop_key !== 'string' || typeof row.display_name !== 'string') return;
+            if (!row.shop_key.trim() || row.shop_key === 'not_listed' || seen.has(row.shop_key)) return;
+            if (!row.display_name.trim()) return;
+            seen.add(row.shop_key);
+            addOption(shopSelect, row.shop_key, row.display_name.trim(), notListed);
+          });
+        } catch (err) {
+          shopsProblem = "Shops could not be loaded. You can still choose My shop isn't listed.";
+          showCatalogStatus(false);
+        }
+      }
+
+      async function runCheck(form, button, statusEl, params) {
+        const token = ++checkSerial;
+        const label = button.textContent;
+        clearInvalid(form);
+        statusEl.textContent = '';
+        setFormBusy(form, true);
+        button.textContent = 'Checking…';
+        try {
+          if (!supabaseClient) throw new Error('unavailable');
+          const result = await supabaseClient.rpc('sticker_check', {
+            p_route: params.p_route,
+            p_game: params.p_game,
+            p_shop_key: params.p_shop_key,
+            p_bought_on: params.p_bought_on,
+            p_kiosk_email: params.p_kiosk_email
+          });
+          if (token !== checkSerial) return;
+          if (result.error) {
+            statusEl.textContent = RESULT_COPY.NETWORK;
+            return;
+          }
+          const body = asObject(result.data);
+          if (!body || !Object.prototype.hasOwnProperty.call(body, 'result')) {
+            statusEl.textContent = RESULT_COPY.NETWORK;
+            return;
+          }
+          const code = body.result == null ? '' : String(body.result).trim();
+          pending = {
+            p_route: params.p_route,
+            p_game: params.p_game,
+            p_shop_key: params.p_shop_key,
+            p_bought_on: params.p_bought_on,
+            p_kiosk_email: params.p_kiosk_email,
+            shopLabel: params.shopLabel || ''
+          };
+          showOutcome(code, body, pending);
+        } catch (err) {
+          if (token !== checkSerial) return;
+          statusEl.textContent = RESULT_COPY.NETWORK;
+        } finally {
+          if (token === checkSerial) {
+            button.textContent = label;
+            setFormBusy(form, false);
+          }
+        }
+      }
+
+      function onShopSubmit(event) {
+        event.preventDefault();
+        if (shopCheckBtn.disabled) return;
+        stampMaxDate();
+        clearInvalid(shopForm);
+        const game = trimmed('game');
+        const shopKey = shopSelect.value;
+        const bought = boughtOn.value;
+        if (!game) {
+          markInvalid(gameSelect, shopStatus);
+          return;
+        }
+        if (!shopKey) {
+          markInvalid(shopSelect, shopStatus);
+          return;
+        }
+        if (!validBoughtOn(bought)) {
+          markInvalid(boughtOn, shopStatus);
+          return;
+        }
+        runCheck(shopForm, shopCheckBtn, shopStatus, {
+          p_route: 'shop',
+          p_game: game,
+          p_shop_key: shopKey,
+          p_bought_on: bought,
+          p_kiosk_email: null,
+          shopLabel: selectedShopLabel()
+        });
+      }
+
+      function onEmailSubmit(event) {
+        event.preventDefault();
+        if (emailCheckBtn.disabled) return;
+        clearInvalid(emailForm);
+        const email = trimmed('kiosk-email');
+        if (!EMAIL_RE.test(email) || email.length > 200) {
+          markInvalid(byId('kiosk-email'), emailStatus);
+          return;
+        }
+        runCheck(emailForm, emailCheckBtn, emailStatus, {
+          p_route: 'email',
+          p_game: null,
+          p_shop_key: null,
+          p_bought_on: null,
+          p_kiosk_email: email,
+          shopLabel: ''
+        });
+      }
+
+      function firstAddressProblem() {
+        const note = noteGroup.hidden ? '' : trimmed('note');
+        const name = trimmed('mail-name');
+        const street = trimmed('mail-street');
+        const apt = trimmed('mail-apt');
+        const city = trimmed('mail-city');
+        const state = byId('mail-state').value;
+        const zip = trimmed('mail-zip');
+        const email = trimmed('mail-email');
+        if (!noteGroup.hidden && note.length > 1000) return byId('note');
+        if (!name || name.length > 120) return byId('mail-name');
+        if (!street || street.length > 200) return byId('mail-street');
+        if (apt.length > 60) return byId('mail-apt');
+        if (!city || city.length > 100) return byId('mail-city');
+        if (!STATE_CODES.has(state)) return byId('mail-state');
+        if (!ZIP_RE.test(zip)) return byId('mail-zip');
+        if (!EMAIL_RE.test(email) || email.length > 200) return byId('mail-email');
+        return null;
+      }
+
+      async function onAddressSubmit(event) {
+        event.preventDefault();
+        if (sending) return;
+        clearInvalid(addressForm);
+        if (!pending) {
+          submitStatus.textContent = RESULT_COPY.NETWORK;
+          return;
+        }
+        const problem = firstAddressProblem();
+        if (problem) {
+          markInvalid(problem, submitStatus);
+          return;
+        }
+        const payload = {
+          p_route: pending.p_route,
+          p_game: pending.p_game,
+          p_shop_key: pending.p_shop_key,
+          p_bought_on: pending.p_bought_on,
+          p_kiosk_email: pending.p_kiosk_email,
+          p_name: trimmed('mail-name'),
+          p_email: trimmed('mail-email'),
+          p_street: trimmed('mail-street'),
+          p_apt: trimmed('mail-apt') || null,
+          p_city: trimmed('mail-city'),
+          p_state: byId('mail-state').value,
+          p_zip: trimmed('mail-zip'),
+          p_note: noteGroup.hidden ? null : (trimmed('note') || null),
+          p_trap: byId('website').value
+        };
+        sending = true;
+        sendBtn.disabled = true;
+        resultBack.disabled = true;
+        sendBtn.textContent = 'Sending…';
+        submitStatus.textContent = '';
+        let received = false;
+        try {
+          if (!supabaseClient) throw new Error('unavailable');
+          const result = await supabaseClient.rpc('sticker_submit', payload);
+          if (result.error) {
+            submitStatus.textContent = RESULT_COPY.NETWORK;
+            return;
+          }
+          const body = asObject(result.data);
+          const status = body && body.status != null ? String(body.status).trim() : '';
+          if (status === 'received') {
+            received = true;
+            showDone();
+            return;
+          }
+          if (status === 'busy') {
+            submitStatus.textContent = RESULT_COPY.BUSY;
+            return;
+          }
+          if (status === 'invalid') {
+            submitStatus.textContent = RESULT_COPY.INVALID;
+            return;
+          }
+          submitStatus.textContent = RESULT_COPY.NETWORK;
+        } catch (err) {
+          submitStatus.textContent = RESULT_COPY.NETWORK;
+        } finally {
+          if (!received) {
+            sending = false;
+            sendBtn.disabled = false;
+            resultBack.disabled = false;
+            sendBtn.textContent = 'Send my sticker';
+          }
+        }
+      }
+
+      function fillStates() {
+        const select = byId('mail-state');
+        STATES.forEach(function (row) {
+          addOption(select, row[0], row[1]);
+        });
+      }
+
+      function backFromResult() {
+        if (sending) return;
+        if (pending && pending.p_route === 'email') openEmail();
+        else openShop();
+      }
+
+      byId('note-label').textContent = RESULT_COPY.NOTE;
+      byId('address-note').textContent = RESULT_COPY.ADDRESS_NOTE;
+      fillStates();
+      stampMaxDate();
+
+      openMenuBtn.addEventListener('click', openDrawer);
+      closeMenuBtn.addEventListener('click', closeDrawer);
+      backdrop.addEventListener('click', closeDrawer);
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && drawer.classList.contains('open')) {
+          event.preventDefault();
+          closeDrawer();
+        }
+      });
+
+      byId('choose-shop').addEventListener('click', openShop);
+      byId('choose-email').addEventListener('click', openEmail);
+      byId('shop-back').addEventListener('click', openStart);
+      byId('email-back').addEventListener('click', openStart);
+      resultBack.addEventListener('click', backFromResult);
+      shopForm.addEventListener('submit', onShopSubmit);
+      emailForm.addEventListener('submit', onEmailSubmit);
+      addressForm.addEventListener('submit', onAddressSubmit);
+      addressForm.addEventListener('input', function (event) {
+        if (event.target && event.target.removeAttribute) event.target.removeAttribute('aria-invalid');
+      });
+      addressForm.addEventListener('change', function (event) {
+        if (event.target && event.target.removeAttribute) event.target.removeAttribute('aria-invalid');
+      });
+
+      loadGames();
+      loadShops();
+    })();
+  </script>
+</body>
+</html>
