@@ -260,6 +260,17 @@
       cursor: not-allowed;
     }
 
+    #choose-shop {
+      display: block;
+      max-width: 100%;
+      margin-top: 18px;
+      margin-bottom: 0;
+      white-space: normal;
+      text-align: left;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
     .result-text {
       font-size: 1.15rem;
       font-weight: 700;
@@ -440,12 +451,26 @@
   <main class="card">
     <h1 class="page-title">Free game sticker!</h1>
 
-    <section id="screen-start">
-      <p class="page-sub">Bought a Homebrew Hive cart? We'll mail you a sticker of your game, free.</p>
-      <div class="choices">
-        <button type="button" class="submit-btn" id="choose-shop">I bought it at a shop</button>
-        <button type="button" class="submit-btn" id="choose-email">I have my kiosk email</button>
-      </div>
+    <section id="screen-start" class="screen">
+      <p class="page-sub" id="email-prompt">Did you type your email at the kiosk?</p>
+      <form id="email-form" method="post" action="sticker.html" novalidate onsubmit="return false">
+        <div class="form-group">
+          <label for="kiosk-email" id="kiosk-email-label">Email</label>
+          <input type="email" id="kiosk-email" name="kiosk_email" autocomplete="email" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="200" required />
+        </div>
+        <button type="submit" class="submit-btn" id="email-check">Find my games</button>
+        <p id="email-status" class="status-msg" role="alert"></p>
+        <div id="email-games" hidden>
+          <div class="form-group">
+            <label for="email-game" id="email-game-label">Which game?</label>
+            <select id="email-game" name="email_game">
+              <option value="">Select a game</option>
+            </select>
+          </div>
+          <button type="button" class="submit-btn" id="email-use">Continue</button>
+        </div>
+      </form>
+      <button type="button" class="back-btn" id="choose-shop">I didn't enter an email at the kiosk</button>
     </section>
 
     <section id="screen-shop" class="screen" hidden>
@@ -470,18 +495,6 @@
         </div>
         <button type="submit" class="submit-btn" id="shop-check">Check my cart</button>
         <p id="shop-status" class="status-msg" role="alert"></p>
-      </form>
-    </section>
-
-    <section id="screen-email" class="screen" hidden>
-      <button type="button" class="back-btn" id="email-back">Back</button>
-      <form id="email-form" method="post" action="sticker.html" novalidate onsubmit="return false">
-        <div class="form-group">
-          <label for="kiosk-email" id="kiosk-email-label">Enter the email you gave at the kiosk.</label>
-          <input type="email" id="kiosk-email" name="kiosk_email" autocomplete="email" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="200" required />
-        </div>
-        <button type="submit" class="submit-btn" id="email-check">Check</button>
-        <p id="email-status" class="status-msg" role="alert"></p>
       </form>
     </section>
 
@@ -568,8 +581,15 @@
         BUSY: "We're getting a lot of requests right now. Please try again tomorrow.",
         INVALID: 'Please check the fields and try again.',
         NETWORK: 'Something went wrong. Please try again. What you typed is still here.',
-        EMAIL_LABEL: 'Enter the email you gave at the kiosk.',
-        EMAIL_BUTTON: 'Check',
+        EMAIL_PROMPT: 'Did you type your email at the kiosk?',
+        EMAIL_LABEL: 'Email',
+        EMAIL_BUTTON: 'Find my games',
+        EMAIL_FINDING: 'Finding…',
+        EMAIL_EMPTY: "We couldn't find a print for that email. Check the spelling, or use the shop and date option below.",
+        EMAIL_BUSY: 'Please try again later.',
+        EMAIL_FALLBACK: "I didn't enter an email at the kiosk",
+        EMAIL_GAME_LABEL: 'Which game?',
+        EMAIL_GAME_BUTTON: 'Continue',
         EMAIL_NO_MATCH: "We couldn't find that cart yet. This can happen if the shop's kiosk was offline. Send it for a quick review.",
         EMAIL_ALREADY_CLAIMED: "A sticker for this cart has already been claimed. If that wasn't you, send it for review.",
         NOTE_NOT_LISTED: 'Which shop was it? Anything else that helps (receipt number, time of day).',
@@ -668,6 +688,7 @@
       let gamesProblem = '';
       let shopsProblem = '';
       let publishedCatalog = '';
+      let emailGames = [];
 
       try {
         if (typeof supabase !== 'undefined' && supabase.createClient) {
@@ -689,7 +710,7 @@
       }
 
       function showScreen(id) {
-        ['screen-start', 'screen-shop', 'screen-email', 'screen-result', 'screen-done'].forEach(function (sid) {
+        ['screen-start', 'screen-shop', 'screen-result', 'screen-done'].forEach(function (sid) {
           byId(sid).hidden = sid !== id;
         });
       }
@@ -816,8 +837,10 @@
         checkSerial += 1;
         setFormBusy(emailForm, false);
         emailCheckBtn.textContent = RESULT_COPY.EMAIL_BUTTON;
-        showScreen('screen-email');
-        byId('kiosk-email').focus();
+        emailStatus.textContent = '';
+        showScreen('screen-start');
+        // Same as the shop select: don't focus a field during a tap on a touch screen.
+        if (!window.matchMedia('(pointer: coarse)').matches) byId('kiosk-email').focus();
       }
 
       function openStart() {
@@ -827,7 +850,6 @@
         shopCheckBtn.textContent = RESULT_COPY.SHOP_BUTTON;
         emailCheckBtn.textContent = RESULT_COPY.EMAIL_BUTTON;
         showScreen('screen-start');
-        byId('choose-shop').focus();
       }
 
       function selectedShopLabel() {
@@ -1073,7 +1095,35 @@
         });
       }
 
-      function onEmailSubmit(event) {
+      function formatBought(iso) {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+        if (!match) return '';
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = months[Number(match[2]) - 1];
+        if (!month) return '';
+        return month + ' ' + String(Number(match[3]));
+      }
+
+      function fillEmailGames(games) {
+        emailGames = games;
+        const sel = byId('email-game');
+        sel.textContent = '';
+        addOption(sel, '', 'Select a game');
+        games.forEach(function (game, index) {
+          const when = formatBought(game.bought_on);
+          addOption(sel, String(index), game.game_title + ' - bought ' + when);
+        });
+        byId('email-games').hidden = false;
+      }
+
+      function clearEmailGames() {
+        emailGames = [];
+        byId('email-games').hidden = true;
+        byId('email-game').textContent = '';
+        addOption(byId('email-game'), '', 'Select a game');
+      }
+
+      async function onEmailLookup(event) {
         event.preventDefault();
         if (emailCheckBtn.disabled) return;
         clearInvalid(emailForm);
@@ -1082,11 +1132,71 @@
           markInvalid(byId('kiosk-email'), emailStatus);
           return;
         }
-        runCheck(emailForm, emailCheckBtn, emailStatus, {
+        const token = ++checkSerial;
+        clearEmailGames();
+        emailStatus.textContent = '';
+        setFormBusy(emailForm, true);
+        emailCheckBtn.textContent = RESULT_COPY.EMAIL_FINDING;
+        try {
+          if (!supabaseClient) throw new Error('unavailable');
+          const result = await withTimeout(supabaseClient.rpc('sticker_games_for_email', { p_email: email }));
+          if (token !== checkSerial) return;
+          if (result.error) {
+            emailStatus.textContent = RESULT_COPY.NETWORK;
+            return;
+          }
+          const body = asObject(result.data);
+          if (body && String(body.status || '') === 'busy') {
+            emailStatus.textContent = RESULT_COPY.EMAIL_BUSY;
+            return;
+          }
+          const games = body && Array.isArray(body.games) ? body.games : null;
+          if (!games) {
+            emailStatus.textContent = RESULT_COPY.NETWORK;
+            return;
+          }
+          const clean = [];
+          games.forEach(function (row) {
+            if (!row || typeof row.game_title !== 'string' || typeof row.bought_on !== 'string') return;
+            const title = row.game_title.trim();
+            const bought = row.bought_on.trim();
+            if (!title || !formatBought(bought)) return;
+            clean.push({ game_title: title, bought_on: bought });
+          });
+          if (!clean.length) {
+            emailStatus.textContent = RESULT_COPY.EMAIL_EMPTY;
+            return;
+          }
+          fillEmailGames(clean);
+        } catch (err) {
+          if (token !== checkSerial) return;
+          emailStatus.textContent = RESULT_COPY.NETWORK;
+        } finally {
+          if (token === checkSerial) {
+            emailCheckBtn.textContent = RESULT_COPY.EMAIL_BUTTON;
+            setFormBusy(emailForm, false);
+          }
+        }
+      }
+
+      function onEmailGameContinue() {
+        if (byId('email-use').disabled) return;
+        clearInvalid(emailForm);
+        const email = trimmed('kiosk-email');
+        const picked = emailGames[Number(byId('email-game').value)];
+        if (!EMAIL_RE.test(email) || email.length > 200) {
+          markInvalid(byId('kiosk-email'), emailStatus);
+          return;
+        }
+        if (!picked) {
+          markInvalid(byId('email-game'), emailStatus);
+          return;
+        }
+        runCheck(emailForm, byId('email-use'), emailStatus, {
           p_route: 'email',
-          p_game: null,
+          p_game: picked.game_title,
           p_shop_key: null,
-          p_bought_on: null,
+          p_bought_on: picked.bought_on,
           p_kiosk_email: email,
           shopLabel: ''
         });
@@ -1198,7 +1308,11 @@
       }
 
       byId('note-label').textContent = RESULT_COPY.NOTE;
+      byId('email-prompt').textContent = RESULT_COPY.EMAIL_PROMPT;
       byId('kiosk-email-label').textContent = RESULT_COPY.EMAIL_LABEL;
+      byId('email-game-label').textContent = RESULT_COPY.EMAIL_GAME_LABEL;
+      byId('email-use').textContent = RESULT_COPY.EMAIL_GAME_BUTTON;
+      byId('choose-shop').textContent = RESULT_COPY.EMAIL_FALLBACK;
       emailCheckBtn.textContent = RESULT_COPY.EMAIL_BUTTON;
       shopCheckBtn.textContent = RESULT_COPY.SHOP_BUTTON;
       sendBtn.textContent = RESULT_COPY.SEND_BUTTON;
@@ -1217,12 +1331,15 @@
       });
 
       byId('choose-shop').addEventListener('click', openShop);
-      byId('choose-email').addEventListener('click', openEmail);
       byId('shop-back').addEventListener('click', openStart);
-      byId('email-back').addEventListener('click', openStart);
       resultBack.addEventListener('click', backFromResult);
       shopForm.addEventListener('submit', onShopSubmit);
-      emailForm.addEventListener('submit', onEmailSubmit);
+      emailForm.addEventListener('submit', onEmailLookup);
+      byId('email-use').addEventListener('click', onEmailGameContinue);
+      byId('kiosk-email').addEventListener('input', function () {
+        clearEmailGames();
+        byId('kiosk-email').removeAttribute('aria-invalid');
+      });
       addressForm.addEventListener('submit', onAddressSubmit);
       addressForm.addEventListener('input', function (event) {
         if (event.target && event.target.removeAttribute) event.target.removeAttribute('aria-invalid');
