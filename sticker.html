@@ -393,7 +393,7 @@
       <button type="button" class="back-btn" id="email-back">Back</button>
       <form id="email-form" method="post" action="sticker.html" novalidate onsubmit="return false">
         <div class="form-group">
-          <label for="kiosk-email">Enter the email you gave at the kiosk.</label>
+          <label for="kiosk-email" id="kiosk-email-label">Enter the email you gave at the kiosk.</label>
           <input type="email" id="kiosk-email" name="kiosk_email" autocomplete="email" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="200" required />
         </div>
         <button type="submit" class="submit-btn" id="email-check">Check</button>
@@ -479,8 +479,18 @@
         RECEIVED: "You're all set! Stickers go out by regular mail about once a week (US only) and usually arrive in 1-2 weeks.",
         BUSY: "We're getting a lot of requests right now. Please try again tomorrow.",
         INVALID: 'Please check the fields and try again.',
-        NETWORK: 'Something went wrong. Please try again. What you typed is still here.'
+        NETWORK: 'Something went wrong. Please try again. What you typed is still here.',
+        EMAIL_LABEL: 'Enter the email you gave at the kiosk.',
+        EMAIL_BUTTON: 'Check',
+        EMAIL_NO_MATCH: "We couldn't find that cart yet. This can happen if the shop's kiosk was offline. Send it for a quick review.",
+        EMAIL_ALREADY_CLAIMED: "A sticker for this cart has already been claimed. If that wasn't you, send it for review.",
+        NOTE_NOT_LISTED: 'Which shop was it? Anything else that helps (receipt number, time of day).',
+        SHOP_BUTTON: 'Check my cart',
+        CHECKING: 'Checking…',
+        SEND_BUTTON: 'Send my sticker',
+        SENDING: 'Sending…'
       });
+      const RPC_TIMEOUT_MS = 20000;
 
       const SUPABASE_URL = 'https://tskbfytfjsiavwysecuk.supabase.co';
       const SUPABASE_KEY = 'sb_publishable_I27CpcilWluOjUSSb6y_pQ_t9ylEjmB';
@@ -577,6 +587,13 @@
         }
       } catch (err) {
         supabaseClient = null;
+      }
+
+      function withTimeout(builder) {
+        if (typeof AbortController === 'undefined' || !builder || typeof builder.abortSignal !== 'function') return builder;
+        const ctrl = new AbortController();
+        const timer = setTimeout(function () { ctrl.abort(); }, RPC_TIMEOUT_MS);
+        return Promise.resolve(builder.abortSignal(ctrl.signal)).finally(function () { clearTimeout(timer); });
       }
 
       function byId(id) {
@@ -699,7 +716,7 @@
       function openShop() {
         checkSerial += 1;
         setFormBusy(shopForm, false);
-        shopCheckBtn.textContent = 'Check my cart';
+        shopCheckBtn.textContent = RESULT_COPY.SHOP_BUTTON;
         stampMaxDate();
         showScreen('screen-shop');
         showCatalogStatus(true);
@@ -709,7 +726,7 @@
       function openEmail() {
         checkSerial += 1;
         setFormBusy(emailForm, false);
-        emailCheckBtn.textContent = 'Check';
+        emailCheckBtn.textContent = RESULT_COPY.EMAIL_BUTTON;
         showScreen('screen-email');
         byId('kiosk-email').focus();
       }
@@ -718,8 +735,8 @@
         checkSerial += 1;
         setFormBusy(shopForm, false);
         setFormBusy(emailForm, false);
-        shopCheckBtn.textContent = 'Check my cart';
-        emailCheckBtn.textContent = 'Check';
+        shopCheckBtn.textContent = RESULT_COPY.SHOP_BUTTON;
+        emailCheckBtn.textContent = RESULT_COPY.EMAIL_BUTTON;
         showScreen('screen-start');
         byId('choose-shop').focus();
       }
@@ -744,13 +761,18 @@
         const names = namesForMatch(payload, params);
         const knownReview = code === 'already_claimed';
         const matched = code === 'match';
+        const byEmail = params.p_route === 'email';
         const message = matched
           ? fillMatch(names.game, names.shop)
-          : (knownReview ? RESULT_COPY.ALREADY_CLAIMED : RESULT_COPY.NO_MATCH);
+          : (knownReview
+            ? (byEmail ? RESULT_COPY.EMAIL_ALREADY_CLAIMED : RESULT_COPY.ALREADY_CLAIMED)
+            : (byEmail ? RESULT_COPY.EMAIL_NO_MATCH : RESULT_COPY.NO_MATCH));
         noteGroup.hidden = matched || knownReview;
+        byId('note-label').textContent = code === 'shop_not_listed' ? RESULT_COPY.NOTE_NOT_LISTED : RESULT_COPY.NOTE;
+        if (byEmail && params.p_kiosk_email && !trimmed('mail-email')) byId('mail-email').value = params.p_kiosk_email;
         byId('result-text').textContent = message;
         submitStatus.textContent = '';
-        sendBtn.textContent = 'Send my sticker';
+        sendBtn.textContent = RESULT_COPY.SEND_BUTTON;
         sendBtn.disabled = false;
         resultBack.disabled = false;
         sending = false;
@@ -771,10 +793,10 @@
       async function loadGames() {
         try {
           if (!supabaseClient) throw new Error('unavailable');
-          const result = await supabaseClient
+          const result = await withTimeout(supabaseClient
             .from('games')
             .select('title')
-            .or('status.eq.Approved,status.is.null');
+            .or('status.eq.Approved,status.is.null'));
           if (result.error || !Array.isArray(result.data)) throw new Error('unavailable');
           const seen = new Set();
           const titles = [];
@@ -805,7 +827,7 @@
         shopSelect.options[0].textContent = 'Select a shop';
         try {
           if (!supabaseClient) throw new Error('unavailable');
-          const result = await supabaseClient.rpc('sticker_shop_list');
+          const result = await withTimeout(supabaseClient.rpc('sticker_shop_list'));
           if (result.error || !Array.isArray(result.data)) throw new Error('unavailable');
           const seen = new Set();
           result.data.forEach(function (row) {
@@ -827,16 +849,16 @@
         clearInvalid(form);
         statusEl.textContent = '';
         setFormBusy(form, true);
-        button.textContent = 'Checking…';
+        button.textContent = RESULT_COPY.CHECKING;
         try {
           if (!supabaseClient) throw new Error('unavailable');
-          const result = await supabaseClient.rpc('sticker_check', {
+          const result = await withTimeout(supabaseClient.rpc('sticker_check', {
             p_route: params.p_route,
             p_game: params.p_game,
             p_shop_key: params.p_shop_key,
             p_bought_on: params.p_bought_on,
             p_kiosk_email: params.p_kiosk_email
-          });
+          }));
           if (token !== checkSerial) return;
           if (result.error) {
             statusEl.textContent = RESULT_COPY.NETWORK;
@@ -969,12 +991,12 @@
         sending = true;
         sendBtn.disabled = true;
         resultBack.disabled = true;
-        sendBtn.textContent = 'Sending…';
+        sendBtn.textContent = RESULT_COPY.SENDING;
         submitStatus.textContent = '';
         let received = false;
         try {
           if (!supabaseClient) throw new Error('unavailable');
-          const result = await supabaseClient.rpc('sticker_submit', payload);
+          const result = await withTimeout(supabaseClient.rpc('sticker_submit', payload));
           if (result.error) {
             submitStatus.textContent = RESULT_COPY.NETWORK;
             return;
@@ -1002,7 +1024,7 @@
             sending = false;
             sendBtn.disabled = false;
             resultBack.disabled = false;
-            sendBtn.textContent = 'Send my sticker';
+            sendBtn.textContent = RESULT_COPY.SEND_BUTTON;
           }
         }
       }
@@ -1021,6 +1043,10 @@
       }
 
       byId('note-label').textContent = RESULT_COPY.NOTE;
+      byId('kiosk-email-label').textContent = RESULT_COPY.EMAIL_LABEL;
+      emailCheckBtn.textContent = RESULT_COPY.EMAIL_BUTTON;
+      shopCheckBtn.textContent = RESULT_COPY.SHOP_BUTTON;
+      sendBtn.textContent = RESULT_COPY.SEND_BUTTON;
       byId('address-note').textContent = RESULT_COPY.ADDRESS_NOTE;
       fillStates();
       stampMaxDate();
