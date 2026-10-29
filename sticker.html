@@ -188,6 +188,21 @@
       color: #111;
     }
 
+    .form-group input[type="date"] {
+      display: block;
+      min-width: 0;
+      max-width: 100%;
+      min-height: 45px;
+      line-height: normal;
+      -webkit-appearance: none;
+      appearance: none;
+      text-align: left;
+    }
+
+    .form-group input[type="date"]::-webkit-date-and-time-value {
+      text-align: left;
+    }
+
     .form-group textarea {
       resize: vertical;
       min-height: 72px;
@@ -720,7 +735,8 @@
         stampMaxDate();
         showScreen('screen-shop');
         showCatalogStatus(true);
-        gameSelect.focus();
+        // iOS Safari opens the picker when a select gets focus() during a tap; skip on touch screens.
+        if (!window.matchMedia('(pointer: coarse)').matches) gameSelect.focus();
       }
 
       function openEmail() {
