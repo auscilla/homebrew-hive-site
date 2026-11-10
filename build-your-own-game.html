@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Build Your Own Game</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico?v=2">
+
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f7f7f7;
+      color: #111;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Top Left Menu Trigger */
+    .menu-btn {
+      position: absolute;
+      top: 24px;
+      left: 32px;
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      color: #333;
+      cursor: pointer;
+      z-index: 10;
+      padding: 8px 0;
+    }
+
+    /* Slide-out Overlay Drawer */
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 320px;
+      height: 100%;
+      background-color: #111111;
+      color: #ffffff;
+      z-index: 100;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+    }
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .nav-links a {
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 28px;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-family: 'Impact', 'Arial Black', sans-serif;
+    }
+
+    .backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.2);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Contact Card Box */
+    .contact-container {
+      max-width: 520px;
+      width: 92%;
+      margin: 80px auto 40px;
+      background: #ffffff;
+      padding: 32px 28px;
+      border: 2px solid #111;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .contact-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .contact-sub {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .contact-price {
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border: 2px solid #111;
+      border-radius: 4px;
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: #111;
+      color: #fff;
+      border: none;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: background 0.2s ease;
+    }
+
+    .submit-btn:hover {
+      background: #333;
+    }
+
+    .status-msg {
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 480px) {
+      .contact-container {
+        padding: 24px 16px;
+        margin-top: 70px;
+      }
+      .contact-title {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Menu Trigger Button -->
+  <button class="menu-btn" id="openMenu">MENU</button>
+
+  <!-- Navigation Drawer -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <span>MENU</span>
+      <button class="close-btn" id="closeMenu">&times;</button>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html">HOME</a>
+      <a href="how-it-works.html">HOW IT WORKS</a>
+      <a href="games.html">GAMES</a>
+      <a href="login.html">LOGIN</a>
+      <a href="find-us.html">FIND US</a>
+      <a href="request-us.html">REQUEST US</a>
+      <a href="contact-us.html">CONTACT US</a>
+    </nav>
+  </div>
+
+  <div class="backdrop" id="backdrop"></div>
+
+  <!-- Contact Form Card -->
+  <div class="contact-container">
+    <h1 class="contact-title">Build Your Own Game</h1>
+    <p class="contact-sub">A real Game Boy game, made just for you.<br>A gift or a birthday game.<br>Play it on real hardware or an emulator.</p>
+    <p class="contact-price">$199</p>
+
+    <form id="contactForm" onsubmit="handleContactSubmit(event)">
+      <input type="hidden" id="inquirySubject" name="subject" value="Build Your Own Game inquiry" />
+
+      <div class="form-group">
+        <label for="contactName">Name</label>
+        <input type="text" id="contactName" required placeholder="Your Name" />
+      </div>
+
+      <div class="form-group">
+        <label for="contactEmail">Email Address</label>
+        <input type="email" id="contactEmail" required placeholder="your.email@example.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="contactComment">Comment</label>
+        <textarea id="contactComment" required rows="4" placeholder="What should the game be?"></textarea>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">Send Message</button>
+      <div id="statusMsg" class="status-msg"></div>
+    </form>
+  </div>
+
+  <script>
+    // 1. Menu Interactions
+    const openMenuBtn = document.getElementById('openMenu');
+    const closeMenuBtn = document.getElementById('closeMenu');
+    const drawer = document.getElementById('drawer');
+    const backdrop = document.getElementById('backdrop');
+
+    function openDrawer() {
+      drawer.classList.add('open');
+      backdrop.classList.add('active');
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      backdrop.classList.remove('active');
+    }
+
+    openMenuBtn.addEventListener('click', openDrawer);
+    closeMenuBtn.addEventListener('click', closeDrawer);
+    backdrop.addEventListener('click', closeDrawer);
+
+    // 2. Supabase Initialization
+    const SUPABASE_URL = 'https://tskbfytfjsiavwysecuk.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_I27CpcilWluOjUSSb6y_pQ_t9ylEjmB';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 3. Form Submission
+    async function handleContactSubmit(e) {
+      e.preventDefault();
+      const statusMsg = document.getElementById('statusMsg');
+      const submitBtn = document.getElementById('submitBtn');
+
+      statusMsg.textContent = 'Sending message...';
+      statusMsg.style.color = '#333';
+      submitBtn.disabled = true;
+
+      const name = document.getElementById('contactName').value.trim();
+      const email = document.getElementById('contactEmail').value.trim().toLowerCase();
+      const subject = document.getElementById('inquirySubject').value.trim();
+      const commentBody = document.getElementById('contactComment').value.trim();
+      const comment = subject + '\n\n' + commentBody;
+
+      const { error } = await supabaseClient
+        .from('contact_messages')
+        .insert([
+          {
+            name: name,
+            email: email,
+            comment: comment,
+            is_developer: false
+          }
+        ]);
+
+      if (error) {
+        console.error('Error submitting contact form:', error);
+        statusMsg.textContent = 'Failed to send message. Please try again.';
+        statusMsg.style.color = '#d9534f';
+        submitBtn.disabled = false;
+      } else {
+        statusMsg.textContent = 'Thank you! Your message has been sent.';
+        statusMsg.style.color = '#2e7d32';
+        document.getElementById('contactForm').reset();
+        submitBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
