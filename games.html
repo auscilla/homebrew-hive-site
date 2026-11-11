@@ -186,17 +186,6 @@
       color: #222;
     }
 
-    .preview-label {
-      margin-top: 8px;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      color: #111;
-      border: 1px solid #111;
-      border-radius: 2px;
-      padding: 1px 6px;
-    }
-
     .loading-msg {
       grid-column: 1 / -1;
       font-size: 1.1rem;
@@ -293,24 +282,6 @@
 
     let GAMES_DATA = [];
 
-    // PREVIEW ONLY - DO NOT MERGE - real launch uses a public.games row.
-    const PREVIEW_GAME = {
-      id: 'tobu-tobu-girl-deluxe',
-      title: 'Tobu Tobu Girl Deluxe',
-      description: 'Tobu Tobu Girl Deluxe is an arcade platformer by Tangram Games where you jump up into the sky to save your cat before it floats into the atmosphere. This full-color version of Tobu Tobu Girl runs on the Game Boy, Game Boy Color, and Super Game Boy.\nTobu Tobu Girl Deluxe (c) 2017-2019 Tangram Games. Code: MIT License. Assets (images, text, sound and music): CC BY 4.0, soundtrack by potato-tan. Images adapted by Homebrew Hive (cartridge render, upscaled screenshots). https://tangramgames.itch.io/tobu-tobu-girl-deluxe',
-      price: '19.99',
-      category: null,
-      image_url: null,
-      video_url: '',
-      cartridge_image_url: 'cart-tobu-tobu-girl-deluxe.png',
-      rom_url: null,
-      status: null,
-      screenshots: 'assets/games/tobu-tobu-girl-deluxe/tobu-tobu-girl-deluxe_screenshot_01.png,assets/games/tobu-tobu-girl-deluxe/tobu-tobu-girl-deluxe_screenshot_02.png,assets/games/tobu-tobu-girl-deluxe/tobu-tobu-girl-deluxe_screenshot_03.png,assets/games/tobu-tobu-girl-deluxe/tobu-tobu-girl-deluxe_screenshot_04.png',
-      sort_order: null,
-      cost: null,
-      developer_cut: null
-    };
-
     // 3. Render Game Cards
     function renderGameCards(games) {
       const grid = document.getElementById('gamesGrid');
@@ -327,12 +298,8 @@
         const card = document.createElement('a');
         card.className = 'game-card';
         card.href = `game-detail.html?id=${game.id}`;
-        const previewBadge = game.id === 'tobu-tobu-girl-deluxe'
-          ? '<span class="preview-label">PREVIEW</span>'
-          : '';
         card.innerHTML = `
           <img src="${imgSrc}" alt="${game.title}" class="cartridge-img" />
-          ${previewBadge}
           <span class="game-title">${game.title}</span>
         `;
         grid.appendChild(card);
@@ -348,16 +315,11 @@
 
       if (error) {
         console.error('Error fetching games from Supabase:', error);
-        GAMES_DATA = [PREVIEW_GAME];
-        renderGameCards(GAMES_DATA);
-        const note = document.createElement('p');
-        note.className = 'loading-msg';
-        note.textContent = 'Failed to load games catalog.';
-        document.getElementById('gamesGrid').prepend(note);
+        document.getElementById('gamesGrid').innerHTML = '<p class="loading-msg">Failed to load games catalog.</p>';
         return;
       }
 
-      GAMES_DATA = data.concat(PREVIEW_GAME);
+      GAMES_DATA = data;
       renderGameCards(GAMES_DATA);
     }
 
