@@ -8,6 +8,7 @@
   
   <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/js/hive-slugs.js"></script>
 
   <style>
     * {
@@ -297,7 +298,7 @@
         
         const card = document.createElement('a');
         card.className = 'game-card';
-        card.href = `game-detail.html?id=${game.id}`;
+        card.href = HiveSlugs.gameDetailPath(game);
         card.innerHTML = `
           <img src="${imgSrc}" alt="${game.title}" class="cartridge-img" />
           <span class="game-title">${game.title}</span>

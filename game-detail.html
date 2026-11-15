@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/">
   <title>Game Detail - Homebrew Hive</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico?v=2">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
 
   <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/js/hive-slugs.js"></script>
 
   <style>
     * {
@@ -542,13 +544,13 @@
       <button class="close-btn" id="closeMenu">&times;</button>
     </div>
     <nav class="nav-links">
-      <a href="index.html">HOME</a>
-      <a href="how-it-works.html">HOW IT WORKS</a>
-      <a href="games.html">GAMES</a>
-      <a href="login.html">LOGIN</a>
-      <a href="find-us.html">FIND US</a>
-      <a href="request-us.html">REQUEST US</a>
-      <a href="contact-us.html">CONTACT US</a>
+      <a href="/index.html">HOME</a>
+      <a href="/how-it-works.html">HOW IT WORKS</a>
+      <a href="/games.html">GAMES</a>
+      <a href="/login.html">LOGIN</a>
+      <a href="/find-us.html">FIND US</a>
+      <a href="/request-us.html">REQUEST US</a>
+      <a href="/contact-us.html">CONTACT US</a>
     </nav>
   </div>
 
@@ -585,7 +587,7 @@
     </section>
 
     <!-- Return Link under Video -->
-    <a href="games.html" class="return-link">Return to Selection</a>
+    <a href="/games.html" class="return-link">Return to Selection</a>
   </main>
 
   <!-- Gamer Wishlist Login Modal -->
@@ -674,25 +676,59 @@
     }
 
     // 3. Load Game Data, Screenshots, & Check Wishlist Status
+    // Looks up by /game-detail/<slug> first, then ?id= (uuid or text id).
+    // If the slug column is not in the API response yet, slugs are computed
+    // client-side from the id or title (see HiveSlugs.canonicalSlug).
     async function loadGameDetail() {
       const urlParams = new URLSearchParams(window.location.search);
-      const gameId = urlParams.get('id');
+      const queryId = urlParams.get('id');
+      const slugFromPath = HiveSlugs.pathSlug(window.location.pathname);
+      const key = slugFromPath || queryId;
 
-      if (!gameId) {
-        window.location.href = 'games.html';
+      if (!key) {
+        window.location.href = '/games.html';
         return;
       }
 
-      const { data, error } = await supabaseClient
-        .from('games')
-        .select('*')
-        .eq('id', gameId)
-        .single();
+      // Prefer the slug column when it exists. If it is missing, or the key
+      // is an old id / title-slug alias, fall back to id then a client-side match.
+      let data = null;
+      const bySlug = await supabaseClient.from('games').select('*').eq('slug', key).maybeSingle();
+      if (!bySlug.error && bySlug.data) {
+        data = bySlug.data;
+      } else {
+        const byId = await supabaseClient.from('games').select('*').eq('id', key).maybeSingle();
+        if (!byId.error && byId.data) {
+          data = byId.data;
+        } else {
+          const allGames = await supabaseClient.from('games').select('*');
+          if (allGames.error) {
+            console.error('Error fetching game details:', allGames.error);
+          }
+          data = HiveSlugs.findGame(allGames.data || [], key);
+        }
+      }
 
-      if (error || !data) {
-        console.error('Error fetching game details:', error);
+      if (!data) {
         document.getElementById('gameTitle').textContent = 'Game Not Found';
         return;
+      }
+
+      document.title = data.title + ' - Homebrew Hive';
+      let canonicalLink = document.querySelector('link[rel="canonical"]');
+      if (!canonicalLink) {
+        canonicalLink = document.createElement('link');
+        canonicalLink.setAttribute('rel', 'canonical');
+        document.head.appendChild(canonicalLink);
+      }
+      const canonical = HiveSlugs.gameDetailPath(data);
+      canonicalLink.setAttribute('href', 'https://homebrewhive.com' + canonical);
+
+      // Old ?id= URLs (and title-slug aliases) stay on this page but show the
+      // clean path in the address bar. GitHub Pages cannot issue a real 301.
+      const pathOnly = window.location.pathname.replace(/\/+$/, '') || '/';
+      if (pathOnly !== canonical || window.location.search) {
+        history.replaceState(null, '', canonical);
       }
 
       currentGameTitle = data.title;
