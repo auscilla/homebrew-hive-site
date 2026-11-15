@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/">
+  <title>Page not found - Homebrew Hive</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
+  <script src="/assets/js/hive-slugs.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f7f7f7;
+      color: #111;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+    .box { text-align: center; max-width: 480px; }
+    h1 { font-size: 28px; margin-bottom: 12px; }
+    p { color: #555; margin-bottom: 24px; line-height: 1.5; }
+    a { color: #111; font-weight: 600; }
+  </style>
+  <script>
+    (function () {
+      var path = window.location.pathname;
+      var queryId = new URLSearchParams(window.location.search).get('id');
+      if (HiveSlugs.isGameDetailPath(path) || queryId) {
+        fetch('/game-detail.html', { credentials: 'same-origin' })
+          .then(function (res) {
+            if (!res.ok) throw new Error('Failed to load game-detail.html');
+            return res.text();
+          })
+          .then(function (html) {
+            document.open();
+            document.write(html);
+            document.close();
+          })
+          .catch(function (err) {
+            console.error(err);
+            document.title = 'Game Detail - Homebrew Hive';
+          });
+      }
+    })();
+  </script>
+</head>
+<body>
+  <div class="box">
+    <h1>Page not found</h1>
+    <p>That address is not a page on Homebrew Hive.</p>
+    <p><a href="/index.html">Home</a> &nbsp;·&nbsp; <a href="/games.html">Games</a></p>
+  </div>
+</body>
+</html>
