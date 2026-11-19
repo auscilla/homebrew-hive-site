@@ -215,6 +215,142 @@
       display: none;
     }
 
+    /* Video slot (16:9) */
+    .video-slot {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      margin: -8px 0 24px;
+      background: #111111;
+      border: 2px solid #111;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .video-slot iframe,
+    .video-slot video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+
+    .video-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #ffcc00;
+      font-family: 'Impact', 'Arial Black', sans-serif;
+      font-size: 22px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .video-placeholder .play-icon {
+      width: 0;
+      height: 0;
+      border-top: 16px solid transparent;
+      border-bottom: 16px solid transparent;
+      border-left: 26px solid #ffcc00;
+    }
+
+    /* How it works */
+    .how-section {
+      max-width: 1040px;
+      width: 92%;
+      margin: 0 auto 60px;
+    }
+
+    .how-title {
+      font-family: 'Impact', 'Arial Black', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .how-sub {
+      text-align: center;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 28px;
+    }
+
+    .how-step {
+      background: #ffffff;
+      border: 2px solid #111;
+      border-radius: 8px;
+      padding: 22px 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .how-step-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .step-num {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #ffcc00;
+      color: #111111;
+      border: 2px solid #111;
+      font-family: 'Impact', 'Arial Black', sans-serif;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-text {
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .shots {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 20px;
+    }
+
+    .shot {
+      margin: 0;
+      text-align: center;
+    }
+
+    /* 160x144 Game Boy screens shown at exactly 2x (1x on very narrow phones) */
+    .shot img {
+      display: block;
+      width: 320px;
+      height: 288px;
+      image-rendering: pixelated;
+      border: 2px solid #111;
+      border-radius: 4px;
+      background: #111;
+    }
+
+    .shot figcaption {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-top: 8px;
+      letter-spacing: 0.5px;
+    }
+
     @media (max-width: 480px) {
       .contact-container {
         padding: 24px 16px;
@@ -222,6 +358,22 @@
       }
       .contact-title {
         font-size: 1.5rem;
+      }
+      .how-title {
+        font-size: 1.6rem;
+      }
+      .how-step {
+        padding: 18px 12px;
+      }
+      .video-placeholder {
+        font-size: 18px;
+      }
+    }
+
+    @media (max-width: 359px) {
+      .shot img {
+        width: 160px;
+        height: 144px;
       }
     }
   </style>
@@ -255,7 +407,30 @@
   <div class="contact-container">
     <h1 class="contact-title">Build Your Own Game</h1>
     <p class="contact-sub">A real Game Boy game, made just for you.<br>A gift or a birthday game.<br>Play it on real hardware or an emulator.</p>
-    <p class="contact-price">$199</p>
+    <p class="contact-price">$49.99</p>
+
+    <!--
+      VIDEO SLOT (16:9). To add the video later, delete the <div class="video-placeholder">...</div>
+      block below and put ONE of these inside <div class="video-slot"> instead:
+
+      YouTube (replace VIDEO_ID):
+        <iframe src="https://www.youtube-nocookie.com/embed/VIDEO_ID?rel=0"
+                title="Build Your Own Game video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen loading="lazy"></iframe>
+
+      MP4 (upload the file to assets/byog/, e.g. assets/byog/byog.mp4):
+        <video src="assets/byog/byog.mp4" controls playsinline preload="metadata"
+               poster="assets/byog/su-title.png"></video>
+
+      The .video-slot CSS already sizes an iframe or video to fill the 16:9 box.
+    -->
+    <div class="video-slot" id="byogVideo">
+      <div class="video-placeholder">
+        <span class="play-icon" aria-hidden="true"></span>
+        <span>Video coming soon</span>
+      </div>
+    </div>
 
     <form id="storeGate" onsubmit="handleStoreCode(event)" autocomplete="off">
       <p class="store-gate-note">Enter your store code to start. Ask the store staff if you don't have it.</p>
@@ -290,6 +465,68 @@
       <div id="statusMsg" class="status-msg"></div>
     </form>
   </div>
+
+  <!-- How it works (example: Save Unlimited) -->
+  <section class="how-section" id="howItWorks">
+    <h2 class="how-title">How it works</h2>
+    <p class="how-sub">Example: <strong>Save Unlimited</strong>, a custom Game Boy game we built.</p>
+
+    <div class="how-step">
+      <div class="how-step-head">
+        <span class="step-num">1</span>
+        <p class="step-text">Enter your store code and tell us your idea.</p>
+      </div>
+    </div>
+
+    <div class="how-step">
+      <div class="how-step-head">
+        <span class="step-num">2</span>
+        <p class="step-text">We email you a few quick follow-up questions within about 10 minutes.</p>
+      </div>
+    </div>
+
+    <div class="how-step">
+      <div class="how-step-head">
+        <span class="step-num">3</span>
+        <p class="step-text">We build your custom Game Boy game, with a title screen, story slides, an instructions screen and 10 levels that get harder.</p>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <img src="assets/byog/su-title.png" width="320" height="288" loading="lazy" alt="Save Unlimited title screen">
+          <figcaption>Title screen</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="assets/byog/su-story.png" width="320" height="288" loading="lazy" alt="Save Unlimited story slide: the Game Slop CEO">
+          <figcaption>Story slide</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="assets/byog/su-instructions.png" width="320" height="288" loading="lazy" alt="Save Unlimited instructions screen">
+          <figcaption>Instructions screen</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="assets/byog/su-level-02.png" width="320" height="288" loading="lazy" alt="Save Unlimited level 2, on the street">
+          <figcaption>Level 2: the street</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="assets/byog/su-level-05.png" width="320" height="288" loading="lazy" alt="Save Unlimited level 5, the brick vents level">
+          <figcaption>Level 5: harder</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="how-step">
+      <div class="how-step-head">
+        <span class="step-num">4</span>
+        <p class="step-text">You get it to play on real hardware or an emulator.</p>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <img src="assets/byog/su-win.png" width="320" height="288" loading="lazy" alt="Save Unlimited win screen">
+          <figcaption>Win screen</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
 
   <script>
     // 1. Menu Interactions
