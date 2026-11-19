@@ -196,6 +196,25 @@
       margin-top: 12px;
     }
 
+    /* Store code gate */
+    .store-gate-note {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .store-badge {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #2e7d32;
+    }
+
+    .locked {
+      display: none;
+    }
+
     @media (max-width: 480px) {
       .contact-container {
         padding: 24px 16px;
@@ -226,6 +245,7 @@
       <a href="find-us.html">FIND US</a>
       <a href="request-us.html">REQUEST US</a>
       <a href="contact-us.html">CONTACT US</a>
+      <a href="build-your-own-game.html" style="color: #ffcc00;">BUILD A GAME</a>
     </nav>
   </div>
 
@@ -237,7 +257,18 @@
     <p class="contact-sub">A real Game Boy game, made just for you.<br>A gift or a birthday game.<br>Play it on real hardware or an emulator.</p>
     <p class="contact-price">$199</p>
 
-    <form id="contactForm" onsubmit="handleContactSubmit(event)">
+    <form id="storeGate" onsubmit="handleStoreCode(event)" autocomplete="off">
+      <p class="store-gate-note">Enter your store code to start. Ask the store staff if you don't have it.</p>
+      <div class="form-group">
+        <label for="storeCode">Store Code</label>
+        <input type="password" id="storeCode" required maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="4-digit store code" />
+      </div>
+      <button type="submit" class="submit-btn" id="storeCodeBtn">Unlock Form</button>
+      <div id="storeCodeMsg" class="status-msg" role="alert"></div>
+    </form>
+
+    <form id="contactForm" class="locked" onsubmit="handleContactSubmit(event)">
+      <div id="storeBadge" class="store-badge"></div>
       <input type="hidden" id="inquirySubject" name="subject" value="Build Your Own Game inquiry" />
 
       <div class="form-group">
@@ -286,7 +317,60 @@
     const SUPABASE_KEY = 'sb_publishable_I27CpcilWluOjUSSb6y_pQ_t9ylEjmB';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 3. Form Submission
+    // 3. Store code gate (validated server-side; the list of codes never reaches the browser)
+    let storeCode = null;
+
+    function lockForm(message) {
+      storeCode = null;
+      document.getElementById('contactForm').classList.add('locked');
+      document.getElementById('storeGate').classList.remove('locked');
+      const msg = document.getElementById('storeCodeMsg');
+      msg.textContent = message || '';
+      msg.style.color = '#d9534f';
+    }
+
+    async function handleStoreCode(e) {
+      e.preventDefault();
+      const msg = document.getElementById('storeCodeMsg');
+      const btn = document.getElementById('storeCodeBtn');
+      const code = document.getElementById('storeCode').value.trim();
+
+      if (!/^[0-9]{4}$/.test(code)) {
+        msg.textContent = "Hmm, that doesn't look like a store code. It's 4 digits. Please check with the store and try again.";
+        msg.style.color = '#d9534f';
+        return;
+      }
+
+      msg.textContent = 'Checking code...';
+      msg.style.color = '#333';
+      btn.disabled = true;
+
+      const { data, error } = await supabaseClient.rpc('byog_check_store_code', { p_code: code });
+      btn.disabled = false;
+
+      if (error) {
+        console.error('Error checking store code:', error);
+        msg.textContent = "We couldn't check that code right now. Please try again in a moment.";
+        msg.style.color = '#d9534f';
+        return;
+      }
+
+      if (!data) {
+        msg.textContent = "Sorry, we don't recognize that store code. Please check with the store and try again.";
+        msg.style.color = '#d9534f';
+        document.getElementById('storeCode').select();
+        return;
+      }
+
+      storeCode = code;
+      msg.textContent = '';
+      document.getElementById('storeBadge').textContent = 'Store: ' + data + ' \u2713';
+      document.getElementById('storeGate').classList.add('locked');
+      document.getElementById('contactForm').classList.remove('locked');
+      document.getElementById('contactName').focus();
+    }
+
+    // 4. Form Submission
     async function handleContactSubmit(e) {
       e.preventDefault();
       const statusMsg = document.getElementById('statusMsg');
@@ -302,16 +386,26 @@
       const commentBody = document.getElementById('contactComment').value.trim();
       const comment = subject + '\n\n' + commentBody;
 
-      const { error } = await supabaseClient
-        .from('contact_messages')
-        .insert([
-          {
-            name: name,
-            email: email,
-            comment: comment,
-            is_developer: false
-          }
-        ]);
+      if (!storeCode) {
+        submitBtn.disabled = false;
+        statusMsg.textContent = '';
+        lockForm('Please enter your store code first.');
+        return;
+      }
+
+      const { error } = await supabaseClient.rpc('byog_submit', {
+        p_code: storeCode,
+        p_name: name,
+        p_email: email,
+        p_comment: comment
+      });
+
+      if (error && /invalid_store_code/.test(error.message || '')) {
+        submitBtn.disabled = false;
+        statusMsg.textContent = '';
+        lockForm("Sorry, that store code isn't valid anymore. Please check with the store and try again.");
+        return;
+      }
 
       if (error) {
         console.error('Error submitting contact form:', error);
