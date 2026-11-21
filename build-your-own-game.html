@@ -377,6 +377,245 @@
       letter-spacing: 0.5px;
     }
 
+    /* BYOG idea form (Nov 17 QR landing-page form) */
+    .form-group .field-hint {
+      font-size: 12px;
+      color: #555;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    .req {
+      color: #d9534f;
+    }
+
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      border: none;
+    }
+
+    .type-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      background: #ffffff;
+      border: 2px solid #111;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      text-transform: none;
+      font-weight: 400;
+      margin-bottom: 0;
+    }
+
+    .form-group .type-card {
+      display: flex;
+      font-size: 12px;
+      margin-bottom: 0;
+      text-transform: none;
+    }
+
+    .type-card input {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+      pointer-events: none;
+    }
+
+    .type-card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 10 / 9;
+      height: auto;
+      image-rendering: pixelated;
+      border: 2px solid #111;
+      border-radius: 4px;
+      background: #e0f8cf;
+    }
+
+    .type-name {
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      line-height: 1.3;
+    }
+
+    .type-from {
+      font-size: 11px;
+      color: #555;
+    }
+
+    .type-card:has(input:checked) {
+      background: #fff6cc;
+      border-color: #111;
+      box-shadow: 0 0 0 3px #ffcc00;
+    }
+
+    .type-card:has(input:focus-visible) {
+      outline: 2px solid #111;
+      outline-offset: 2px;
+    }
+
+    .chat-box {
+      position: relative;
+      border: 2px solid #111;
+      border-radius: 18px;
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .chat-box.is-locked {
+      background: #eeeeee;
+    }
+
+    .chat-box.is-locked .chat-input {
+      visibility: hidden;
+    }
+
+    .chat-lock {
+      display: none;
+      position: absolute;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #555;
+      text-align: center;
+    }
+
+    .chat-box.is-locked .chat-lock {
+      display: flex;
+    }
+
+    .chat-input {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 12px 12px 10px 14px;
+      min-height: 110px;
+    }
+
+    .chat-prefix {
+      flex: 1 0 100%;
+      font-size: 15px;
+      font-weight: 800;
+      color: #111;
+      line-height: 1.4;
+      user-select: none;
+    }
+
+    .form-group .chat-input textarea {
+      flex: 1 1 0;
+      min-width: 0;
+      border: none;
+      padding: 2px 0;
+      font-size: 15px;
+      line-height: 1.45;
+      resize: none;
+      background: transparent;
+    }
+
+    .chat-send {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: #111;
+      color: #ffcc00;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chat-send:disabled {
+      background: #bbbbbb;
+      color: #eeeeee;
+      cursor: default;
+    }
+
+    .examples-note {
+      font-size: 13px;
+      color: #555;
+      margin: 10px 0 8px;
+    }
+
+    .example-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .example-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: #f7f7f7;
+      border: 2px solid #111;
+      border-radius: 4px;
+      padding: 9px 11px;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #111;
+      cursor: pointer;
+    }
+
+    .example-btn:hover {
+      background: #fff6cc;
+    }
+
+    .example-type {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #555;
+    }
+
+    .rules-box {
+      background: #f7f7f7;
+      border: 2px solid #111;
+      border-radius: 4px;
+      padding: 10px 14px 10px 30px;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .rules-box li + li {
+      margin-top: 4px;
+    }
+
+    .byog-done {
+      padding: 12px 0 4px;
+    }
+
+    .byog-done-title {
+      font-family: 'Impact', 'Arial Black', sans-serif;
+      font-size: 2rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .byog-done-text {
+      font-size: 16px;
+      line-height: 1.5;
+      color: #333;
+    }
+
     @media (max-width: 480px) {
       .contact-container {
         padding: 24px 16px;
@@ -474,24 +713,107 @@
       <div id="storeBadge" class="store-badge"></div>
       <input type="hidden" id="inquirySubject" name="subject" value="Build Your Own Game inquiry" />
 
+      <fieldset class="form-group" style="border: none; padding: 0; min-width: 0;">
+        <legend style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase;">Pick a game type <span class="req">*</span></legend>
+        <div class="type-grid">
+          <label class="type-card">
+            <input type="radio" name="game_type" value="Platformer" data-prefix="My game is a platformer..." required />
+            <img src="assets/byog/types/platformer-cherry-rescue.png" width="160" height="144" loading="lazy" alt="Cherry Rescue! platformer gameplay">
+            <span class="type-name">Platformer</span>
+            <span class="type-from">Example: Cherry Rescue!</span>
+          </label>
+          <label class="type-card">
+            <input type="radio" name="game_type" value="Top-down Adventure" data-prefix="My game is a top-down adventure..." />
+            <img src="assets/byog/types/top-down-adventure-max-pirate.png" width="160" height="144" loading="lazy" alt="Max Pirate top-down adventure gameplay">
+            <span class="type-name">Top-down Adventure</span>
+            <span class="type-from">Example: Max Pirate</span>
+          </label>
+          <label class="type-card">
+            <input type="radio" name="game_type" value="Shoot 'em up" data-prefix="My game is a shoot 'em up..." />
+            <img src="assets/byog/types/shmup-space-samurai.png" width="160" height="144" loading="lazy" alt="SPACE SAMURAI shoot 'em up gameplay">
+            <span class="type-name">Shoot 'em up</span>
+            <span class="type-from">Example: SPACE SAMURAI</span>
+          </label>
+          <label class="type-card">
+            <input type="radio" name="game_type" value="Point-and-click Mystery" data-prefix="My game is a point-and-click mystery..." />
+            <img src="assets/byog/types/mystery-detective-sprite.png" width="160" height="144" loading="lazy" alt="Game Boy detective sprite">
+            <span class="type-name">Point-and-click Mystery</span>
+          </label>
+          <label class="type-card">
+            <input type="radio" name="game_type" value="Endless Runner" data-prefix="My game is an endless runner..." />
+            <img src="assets/byog/types/endless-runner-car-sprite.png" width="160" height="144" loading="lazy" alt="Game Boy car sprite">
+            <span class="type-name">Endless Runner</span>
+          </label>
+        </div>
+      </fieldset>
+
       <div class="form-group">
-        <label for="contactName">Name</label>
-        <input type="text" id="contactName" required placeholder="Your Name" />
+        <label for="byogIdea">What's your game idea? <span class="req">*</span></label>
+        <div class="chat-box is-locked" id="chatBox">
+          <div class="chat-lock" id="chatLock">Pick a game type above to start your idea.</div>
+          <div class="chat-input">
+            <span class="chat-prefix" id="ideaPrefix" aria-hidden="true"></span>
+            <textarea id="byogIdea" required rows="3" maxlength="3900" disabled aria-describedby="ideaPrefix" placeholder="Who's the hero, where are they, and what do they have to do?"></textarea>
+            <button type="button" class="chat-send" id="chatSend" disabled aria-label="Send my idea">&#10148;</button>
+          </div>
+        </div>
+        <input type="hidden" name="idea" id="ideaFull" value="" />
+        <p class="examples-note">Need inspiration? Tap one to use it:</p>
+        <div class="example-list">
+          <button type="button" class="example-btn" data-type="Platformer" data-idea="My dog Biscuit jumps through a candy world to save his squeaky toy from a grumpy cat">
+            <span class="example-type">Platformer</span>
+            &ldquo;My dog Biscuit jumps through a candy world to save his squeaky toy from a grumpy cat&rdquo;
+          </button>
+          <button type="button" class="example-btn" data-type="Point-and-click Mystery" data-idea="Santa's elf hunts for the stolen presents in the North Pole workshop">
+            <span class="example-type">Point-and-click Mystery</span>
+            &ldquo;Santa's elf hunts for the stolen presents in the North Pole workshop&rdquo;
+          </button>
+          <button type="button" class="example-btn" data-type="Shoot 'em up" data-idea="A bee pilot blasts evil wasps to save the hive">
+            <span class="example-type">Shoot 'em up</span>
+            &ldquo;A bee pilot blasts evil wasps to save the hive&rdquo;
+          </button>
+          <button type="button" class="example-btn" data-type="Top-down Adventure" data-idea="My daughter Mia explores a snowy island to find a lost puppy">
+            <span class="example-type">Top-down Adventure</span>
+            &ldquo;My daughter Mia explores a snowy island to find a lost puppy&rdquo;
+          </button>
+          <button type="button" class="example-btn" data-type="Endless Runner" data-idea="A gingerbread kid runs across rooftops away from a giant snowball">
+            <span class="example-type">Endless Runner</span>
+            &ldquo;A gingerbread kid runs across rooftops away from a giant snowball&rdquo;
+          </button>
+        </div>
       </div>
 
       <div class="form-group">
-        <label for="contactEmail">Email Address</label>
-        <input type="email" id="contactEmail" required placeholder="your.email@example.com" />
+        <label>The rules</label>
+        <ul class="rules-box">
+          <li>One short level or story</li>
+          <li>Must fit one of the 5 game types</li>
+          <li>Simple characters, no licensed or famous characters</li>
+          <li>Family-friendly</li>
+          <li>No multiplayer or online features</li>
+          <li>Ideas more complicated than our current games will be declined, and we'll tell you if we can't make it</li>
+        </ul>
       </div>
 
       <div class="form-group">
-        <label for="contactComment">Comment</label>
-        <textarea id="contactComment" required rows="4" placeholder="What should the game be?"></textarea>
+        <label for="contactName">Name <span class="req">*</span></label>
+        <input type="text" id="contactName" name="name" required maxlength="200" placeholder="Your Name" />
       </div>
 
-      <button type="submit" class="submit-btn" id="submitBtn">Send Message</button>
-      <div id="statusMsg" class="status-msg"></div>
+      <div class="form-group">
+        <label for="contactEmail">Your email <span class="req">*</span></label>
+        <input type="email" id="contactEmail" name="email" required maxlength="254" placeholder="you@example.com" />
+        <p class="field-hint">We'll only use this to send you questions about your game.</p>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">Submit my idea</button>
+      <div id="statusMsg" class="status-msg" role="alert"></div>
     </form>
+
+    <div id="byogDone" class="byog-done locked" role="status" aria-live="polite">
+      <p class="byog-done-title">We're on it!</p>
+      <p class="byog-done-text">In about 10 minutes we'll email you a few quick questions, with pictures, to perfect your game.</p>
+    </div>
   </div>
 
   <!-- How it works (example: Save Unlimited) -->
@@ -632,7 +954,7 @@
       document.getElementById('storeBadge').textContent = 'Store: ' + data + ' \u2713';
       document.getElementById('storeGate').classList.add('locked');
       document.getElementById('contactForm').classList.remove('locked');
-      document.getElementById('contactName').focus();
+      document.querySelector('#contactForm input[name="game_type"]').focus();
     }
 
     // 4. Form Submission
@@ -641,14 +963,29 @@
       const statusMsg = document.getElementById('statusMsg');
       const submitBtn = document.getElementById('submitBtn');
 
-      statusMsg.textContent = 'Sending message...';
+      statusMsg.textContent = 'Sending your idea...';
       statusMsg.style.color = '#333';
       submitBtn.disabled = true;
 
       const name = document.getElementById('contactName').value.trim();
       const email = document.getElementById('contactEmail').value.trim().toLowerCase();
       const subject = document.getElementById('inquirySubject').value.trim();
-      const commentBody = document.getElementById('contactComment').value.trim();
+      const typeInput = document.querySelector('#contactForm input[name="game_type"]:checked');
+      const gameType = typeInput ? typeInput.value : '';
+      const typed = document.getElementById('byogIdea').value.trim();
+      const idea = typeInput && typed ? typeInput.dataset.prefix + ' ' + typed : '';
+      document.getElementById('ideaFull').value = idea;
+
+      if (!gameType || !idea) {
+        submitBtn.disabled = false;
+        statusMsg.textContent = 'Pick a game type, describe your idea and add your email to submit.';
+        statusMsg.style.color = '#d9534f';
+        return;
+      }
+
+      // Same byog_submit RPC as before; game type and idea travel inside p_comment as labeled lines.
+      // The server appends "Store: <name> (<store email>)" to the comment, which is the store tag in the Hive inbox.
+      const commentBody = 'Game type: ' + gameType + '\n\nIdea:\n' + idea;
       const comment = subject + '\n\n' + commentBody;
 
       if (!storeCode) {
@@ -678,12 +1015,75 @@
         statusMsg.style.color = '#d9534f';
         submitBtn.disabled = false;
       } else {
-        statusMsg.textContent = 'Thank you! Your message has been sent.';
-        statusMsg.style.color = '#2e7d32';
+        statusMsg.textContent = '';
         document.getElementById('contactForm').reset();
         submitBtn.disabled = false;
+        document.getElementById('contactForm').classList.add('locked');
+        document.getElementById('byogDone').classList.remove('locked');
+        document.getElementById('byogDone').scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
+
+    // 5. Chat-style idea box: locked until a game type is picked; the type's prefix is fixed
+    //    (outside the editable text) and is re-applied to the submitted idea.
+    const ideaBox = document.getElementById('byogIdea');
+    const chatBox = document.getElementById('chatBox');
+    const chatSend = document.getElementById('chatSend');
+
+    function applyGameType() {
+      const t = document.querySelector('#contactForm input[name="game_type"]:checked');
+      if (!t) {
+        chatBox.classList.add('is-locked');
+        ideaBox.disabled = true;
+        chatSend.disabled = true;
+        document.getElementById('ideaPrefix').textContent = '';
+        return;
+      }
+      document.getElementById('ideaPrefix').textContent = t.dataset.prefix;
+      chatBox.classList.remove('is-locked');
+      ideaBox.disabled = false;
+      updateSend();
+    }
+
+    function updateSend() {
+      chatSend.disabled = ideaBox.disabled || !ideaBox.value.trim();
+    }
+
+    document.querySelectorAll('#contactForm input[name="game_type"]').forEach(function (r) {
+      r.addEventListener('change', function () {
+        applyGameType();
+        ideaBox.focus();
+      });
+    });
+    ideaBox.addEventListener('input', updateSend);
+    ideaBox.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && !ev.shiftKey) {
+        ev.preventDefault();
+        chatSend.click();
+      }
+    });
+    chatSend.addEventListener('click', function () {
+      // "Send" in the chat box moves on to Name/Email, or submits once they're filled in.
+      const nameEl = document.getElementById('contactName');
+      const emailEl = document.getElementById('contactEmail');
+      if (!nameEl.value.trim()) { nameEl.focus(); return; }
+      if (!emailEl.checkValidity() || !emailEl.value.trim()) { emailEl.focus(); return; }
+      document.getElementById('contactForm').requestSubmit();
+    });
+    document.getElementById('contactForm').addEventListener('reset', function () {
+      setTimeout(applyGameType, 0);
+    });
+
+    // 6. Example ideas: tap to pick its game type and fill the idea after the prefix
+    document.querySelectorAll('.example-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const radio = document.querySelector('#contactForm input[name="game_type"][value="' + btn.dataset.type.replace(/"/g, '\\"') + '"]');
+        if (radio) radio.checked = true;
+        applyGameType();
+        ideaBox.value = btn.dataset.idea;
+        updateSend();
+      });
+    });
   </script>
 </body>
 </html>
