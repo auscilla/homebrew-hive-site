@@ -329,7 +329,7 @@
         card.className = 'game-card';
         card.href = HiveSlugs.gameDetailPath(game);
         card.innerHTML = `
-          <img src="${imgSrc}" alt="${game.title}" class="cartridge-img" />
+          <img src="${imgSrc}" alt="${game.title}" class="cartridge-img" loading="lazy" decoding="async" />
           <span class="game-title">${game.title}</span>
         `;
         grid.appendChild(card);
